@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/* ─── Dark mode only ─────────────────────────────────────────── */
+:root {
+  --background: #050506;
+  --foreground: #f4f4f5;
+  --muted: #9b9ba3;
+  --card: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.08);
+
+  /* Accent shifts with the countdown phase (set on <html data-phase>) */
+  --accent: #22e6a0; /* emerald — normal */
+  --accent-soft: rgba(34, 230, 160, 0.14);
+  --accent-glow: rgba(34, 230, 160, 0.45);
+}
+
+:root[data-phase="warning"] {
+  --accent: #ffb020; /* amber */
+  --accent-soft: rgba(255, 176, 32, 0.16);
+  --accent-glow: rgba(255, 176, 32, 0.5);
+}
+
+:root[data-phase="critical"],
+:root[data-phase="closed"] {
+  --accent: #ff4d5e; /* red */
+  --accent-soft: rgba(255, 77, 94, 0.18);
+  --accent-glow: rgba(255, 77, 94, 0.55);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numeric fields (countdown, counters) should never wiggle in width. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Hide scrollbars on the feed for a clean projected look. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* ─── Premium background layers ──────────────────────────────── */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, #000 40%, transparent 100%);
+}
+
+.bg-aurora {
+  background:
+    radial-gradient(40% 50% at 20% 20%, var(--accent-soft) 0%, transparent 60%),
+    radial-gradient(35% 45% at 80% 15%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+    radial-gradient(45% 55% at 70% 85%, rgba(56, 189, 248, 0.1) 0%, transparent 60%),
+    radial-gradient(40% 50% at 15% 90%, var(--accent-soft) 0%, transparent 60%);
+  filter: blur(20px);
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0% { transform: translate3d(-2%, -1%, 0) scale(1.05); }
+  50% { transform: translate3d(2%, 2%, 0) scale(1.12); }
+  100% { transform: translate3d(-1%, 1%, 0) scale(1.05); }
+}
+
+/* ─── Countdown critical state ───────────────────────────────── */
+@keyframes soft-shake {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-2px, 1px, 0); }
+  40% { transform: translate3d(2px, -1px, 0); }
+  60% { transform: translate3d(-1px, -1px, 0); }
+  80% { transform: translate3d(1px, 1px, 0); }
+}
+
+.animate-shake {
+  animation: soft-shake 0.9s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { text-shadow: 0 0 24px var(--accent-glow), 0 0 60px transparent; }
+  50% { text-shadow: 0 0 44px var(--accent-glow), 0 0 90px var(--accent-glow); }
+}
+
+.animate-glow {
+  animation: pulse-glow 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake,
+  .animate-glow,
+  .bg-aurora {
+    animation: none !important;
+  }
+}
