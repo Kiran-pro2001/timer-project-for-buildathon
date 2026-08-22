@@ -1,14 +1,5 @@
 import type { Launch, LaunchStore, NewLaunch } from "@/types/launch";
 
-/**
- * In-memory launch store with pub/sub.
- *
- * This is the ONLY file that knows *where* launches live. To move to
- * Supabase Realtime later, implement the same `LaunchStore` interface in a
- * `supabaseStore.ts` and swap the export in `data/index.ts`. Every component
- * and hook talks to the interface, never to this implementation.
- */
-
 function minutesAgo(min: number): string {
   return new Date(Date.now() - min * 60_000).toISOString();
 }
@@ -66,15 +57,23 @@ export const localStore: LaunchStore = {
       url: input.url.trim(),
       launchedAt: new Date().toISOString(),
     };
-    // Newest always first.
     launches = [launch, ...launches];
     emit();
     return launch;
   },
 
+  async deleteLaunch(id: string) {
+    launches = launches.filter((l) => l.id !== id);
+    emit();
+  },
+
+  async clearAllLaunches() {
+    launches = [];
+    emit();
+  },
+
   subscribeToLaunches(callback) {
     subscribers.add(callback);
-    // Fire immediately with current state.
     callback([...launches]);
     return () => {
       subscribers.delete(callback);

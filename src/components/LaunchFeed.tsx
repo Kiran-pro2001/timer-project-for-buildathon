@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Radio } from "lucide-react";
+import { Radio, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { Launch } from "@/types/launch";
 import { useNow } from "@/hooks/useNow";
@@ -11,6 +11,8 @@ interface Props {
   launches: Launch[];
   ready: boolean;
   onBillboard: (launch: Launch) => void;
+  onDelete?: (id: string) => void;
+  onClearAll?: () => void;
 }
 
 /** A tiny emoji burst when a new launch lands. */
@@ -43,7 +45,7 @@ function MiniCelebration({ trigger }: { trigger: number }) {
   );
 }
 
-export function LaunchFeed({ launches, ready, onBillboard }: Props) {
+export function LaunchFeed({ launches, ready, onBillboard, onDelete, onClearAll }: Props) {
   const now = useNow(15_000);
   const [newestId, setNewestId] = useState<string | null>(null);
   const [burst, setBurst] = useState(0);
@@ -54,7 +56,6 @@ export function LaunchFeed({ launches, ready, onBillboard }: Props) {
     if (!ready) return;
     const topId = launches[0]?.id ?? null;
     if (!initialized.current) {
-      // Capture the first ready snapshot as baseline — don't celebrate seeds.
       prevTop.current = topId;
       initialized.current = true;
       return;
@@ -70,14 +71,29 @@ export function LaunchFeed({ launches, ready, onBillboard }: Props) {
 
   return (
     <section className="flex h-full flex-col">
-      <div className="mb-5 flex items-center justify-between">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight sm:text-3xl">
           <Radio size={22} className="text-accent" />
           Live Launch Feed
         </h2>
-        <span className="rounded-full border border-[var(--border)] px-3 py-1 text-sm text-muted">
-          {launches.length} shipped
-        </span>
+
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-[var(--border)] bg-white/5 px-3.5 py-1 text-xs font-semibold text-muted">
+            {launches.length} shipped
+          </span>
+
+          {onClearAll && launches.length > 0 && (
+            <button
+              type="button"
+              onClick={onClearAll}
+              title="Clear all live launches"
+              className="flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
+            >
+              <Trash2 size={13} />
+              <span>Clear All</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="relative flex-1">
@@ -106,6 +122,7 @@ export function LaunchFeed({ launches, ready, onBillboard }: Props) {
                   now={now}
                   isNew={launch.id === newestId}
                   onBillboard={onBillboard}
+                  onDelete={onDelete}
                 />
               ))}
             </AnimatePresence>

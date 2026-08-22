@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowUpRight, PartyPopper, Sparkles } from "lucide-react";
+import { ArrowUpRight, PartyPopper, Sparkles, X } from "lucide-react";
 import type { Launch } from "@/types/launch";
 import { formatClock, formatRelative } from "@/hooks/useNow";
 
@@ -12,6 +12,7 @@ interface Props {
   isNew: boolean;
   /** Promote this launch to the Billboard spotlight with fireworks. */
   onBillboard: (launch: Launch) => void;
+  onDelete?: (id: string) => void;
 }
 
 function hostname(url: string): string {
@@ -22,7 +23,7 @@ function hostname(url: string): string {
   }
 }
 
-export function LaunchCard({ launch, now, isNew, onBillboard }: Props) {
+export function LaunchCard({ launch, now, isNew, onBillboard, onDelete }: Props) {
   return (
     <motion.article
       layout
@@ -30,7 +31,7 @@ export function LaunchCard({ launch, now, isNew, onBillboard }: Props) {
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: -40, scale: 0.96 }}
       transition={{ type: "spring", stiffness: 320, damping: 30 }}
-      className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 backdrop-blur-sm"
+      className="group relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] p-5 backdrop-blur-sm"
     >
       {/* Fresh-launch highlight sweep */}
       {isNew && (
@@ -47,7 +48,20 @@ export function LaunchCard({ launch, now, isNew, onBillboard }: Props) {
         />
       )}
 
-      <div className="relative flex items-start justify-between gap-3">
+      {/* Delete button cross icon */}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(launch.id)}
+          title="Delete launch"
+          aria-label="Delete launch"
+          className="absolute top-3 right-3 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-muted opacity-80 transition-all hover:bg-red-500/20 hover:text-red-400 group-hover:opacity-100"
+        >
+          <X size={13} />
+        </button>
+      )}
+
+      <div className="relative flex items-start justify-between gap-3 pr-6">
         <div className="min-w-0">
           <h3 className="flex items-center gap-2 text-xl font-bold tracking-tight sm:text-2xl">
             <span>🚀</span>

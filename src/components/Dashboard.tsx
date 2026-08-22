@@ -8,6 +8,7 @@ import { SPOTLIGHT_MS } from "@/lib/config";
 import { playLaunchSound, setMuted, unlockAudio } from "@/lib/sound";
 import { BrandingBottom } from "./Branding";
 import { Background } from "./Background";
+import { BackgroundAudio } from "./BackgroundAudio";
 import { Confetti } from "./Confetti";
 import { Countdown } from "./Countdown";
 import { Fireworks } from "./Fireworks";
@@ -16,6 +17,7 @@ import { HypeBar } from "./HypeBar";
 import { LaunchBillboard } from "./LaunchBillboard";
 import { LaunchFeed } from "./LaunchFeed";
 import { MotivationQuote } from "./MotivationQuote";
+import { PomodoroTaskPanel } from "./PomodoroTaskPanel";
 import { StatsBar } from "./StatsBar";
 import { AdminPanel } from "./AdminPanel";
 import { useAdminHotkey } from "@/hooks/useAdminHotkey";
@@ -34,7 +36,7 @@ interface Featured {
 }
 
 export function Dashboard({ adminOpenInitially = false }: Props) {
-  const { launches, addLaunch, ready } = useLaunches();
+  const { launches, addLaunch, deleteLaunch, clearAllLaunches, ready } = useLaunches();
   const [adminOpen, setAdminOpen] = useState(adminOpenInitially);
   const [confettiFire, setConfettiFire] = useState(0);
   const [fireworksFire, setFireworksFire] = useState(0);
@@ -126,13 +128,15 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
           </div>
         </header>
 
-        {/* Hero + Countdown */}
+        {/* Hero + Countdown + Quote + Background Audio + Pomodoro & Tasks */}
         <section className="flex flex-col items-center gap-10 pt-2 lg:gap-12">
           <Hero />
           <Countdown onClosed={handleClosed} />
           <div className="w-full max-w-2xl">
             <MotivationQuote />
           </div>
+          <BackgroundAudio />
+          <PomodoroTaskPanel />
         </section>
 
         {/* Billboard spotlight — appears when a launch is featured */}
@@ -154,7 +158,13 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <LaunchFeed launches={launches} ready={ready} onBillboard={billboard} />
+          <LaunchFeed
+            launches={launches}
+            ready={ready}
+            onBillboard={billboard}
+            onDelete={deleteLaunch}
+            onClearAll={clearAllLaunches}
+          />
         </motion.div>
 
         {/* Footer */}

@@ -24,5 +24,13 @@ export function useLaunches() {
     return launchStore.addLaunch(launch);
   }, []);
 
-  return { launches, addLaunch, ready };
+  const deleteLaunch = useCallback((id: string) => {
+    return launchStore.deleteLaunch(id);
+  }, []);
+
+  const clearAllLaunches = useCallback(() => {
+    return launchStore.clearAllLaunches();
+  }, []);
+
+  return { launches, addLaunch, deleteLaunch, clearAllLaunches, ready };
 }

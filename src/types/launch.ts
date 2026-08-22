@@ -13,6 +13,8 @@ export type NewLaunch = Omit<Launch, "id" | "launchedAt">;
 export interface LaunchStore {
   getLaunches(): Promise<Launch[]>;
   addLaunch(launch: NewLaunch): Promise<Launch>;
+  deleteLaunch(id: string): Promise<void>;
+  clearAllLaunches(): Promise<void>;
   /**
    * Subscribe to the full, ordered (newest-first) list of launches.
    * Fires immediately with the current list, then on every change.
