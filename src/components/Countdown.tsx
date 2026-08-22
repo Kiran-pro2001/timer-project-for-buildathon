@@ -60,24 +60,42 @@ interface NumberSpinnerInputProps {
 }
 
 function NumberSpinnerInput({ label, value, min, max, onChange }: NumberSpinnerInputProps) {
+  const [localStr, setLocalStr] = useState<string>(pad(value));
+
+  // Keep local input string in sync when external value changes (e.g. from +/- buttons or presets)
+  useEffect(() => {
+    setLocalStr(pad(value));
+  }, [value]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      onChange(value >= max ? min : value + 1);
+      const next = value >= max ? min : value + 1;
+      onChange(next);
+      setLocalStr(pad(next));
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
-      onChange(value <= min ? max : value - 1);
+      const next = value <= min ? max : value - 1;
+      onChange(next);
+      setLocalStr(pad(next));
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const parsed = parseInt(e.target.value, 10);
+    const raw = e.target.value;
+    setLocalStr(raw);
+
+    const parsed = parseInt(raw, 10);
     if (!isNaN(parsed)) {
       const clamped = Math.max(min, Math.min(max, parsed));
       onChange(clamped);
-    } else if (e.target.value === "") {
+    } else if (raw === "") {
       onChange(0);
     }
+  };
+
+  const handleBlur = () => {
+    setLocalStr(pad(value));
   };
 
   return (
@@ -88,23 +106,32 @@ function NumberSpinnerInput({ label, value, min, max, onChange }: NumberSpinnerI
       <div className="flex items-center gap-1.5">
         <button
           type="button"
-          onClick={() => onChange(value <= min ? max : value - 1)}
+          onClick={() => {
+            const next = value <= min ? max : value - 1;
+            onChange(next);
+            setLocalStr(pad(next));
+          }}
           className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground active:scale-95 transition-all"
         >
           <Minus size={13} />
         </button>
         <input
-          type="number"
-          min={min}
-          max={max}
-          value={pad(value)}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={localStr}
           onChange={handleChange}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-12 sm:w-14 text-center font-mono text-xl sm:text-2xl font-bold text-foreground bg-black/40 border border-[var(--border)] rounded-xl py-0.5 outline-none focus:border-accent focus:ring-1 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-12 sm:w-14 text-center font-mono text-xl sm:text-2xl font-bold text-foreground bg-black/40 border border-[var(--border)] rounded-xl py-0.5 outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         />
         <button
           type="button"
-          onClick={() => onChange(value >= max ? min : value + 1)}
+          onClick={() => {
+            const next = value >= max ? min : value + 1;
+            onChange(next);
+            setLocalStr(pad(next));
+          }}
           className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground active:scale-95 transition-all"
         >
           <Plus size={13} />
