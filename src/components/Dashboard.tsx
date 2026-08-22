@@ -18,10 +18,12 @@ import { LaunchFeed } from "./LaunchFeed";
 import { MotivationQuote } from "./MotivationQuote";
 import { StatsBar } from "./StatsBar";
 import { AdminPanel } from "./AdminPanel";
+import { TimerCompletionModal } from "./TimerCompletionModal";
 import { useAdminHotkey } from "@/hooks/useAdminHotkey";
 import { useHype } from "@/hooks/useHype";
 import { useLaunches } from "@/hooks/useLaunches";
 import { useNewLaunch } from "@/hooks/useNewLaunch";
+import { useThemeConfig } from "@/hooks/useThemeConfig";
 
 interface Props {
   /** When mounted from /admin, open the panel immediately. */
@@ -40,7 +42,10 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
   const [fireworksFire, setFireworksFire] = useState(0);
   const [featured, setFeatured] = useState<Featured | null>(null);
   const [muted, setMutedState] = useState(false);
+  const [completionModalOpen, setCompletionModalOpen] = useState(false);
+
   const hype = useHype();
+  useThemeConfig(); // Mounts active theme configuration & CSS properties
 
   const openAdmin = useCallback(() => setAdminOpen(true), []);
   useAdminHotkey(openAdmin);
@@ -93,6 +98,7 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
 
   const handleClosed = useCallback(() => {
     setConfettiFire((n) => n + 1);
+    setCompletionModalOpen(true); // Open Overtime Extender Popup!
   }, []);
 
   return (
@@ -173,6 +179,11 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
         open={adminOpen}
         onClose={() => setAdminOpen(false)}
         onSubmit={addLaunch}
+      />
+
+      <TimerCompletionModal
+        open={completionModalOpen}
+        onClose={() => setCompletionModalOpen(false)}
       />
     </main>
   );

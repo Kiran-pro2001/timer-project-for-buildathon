@@ -3,13 +3,17 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Clock,
+  Image as ImageIcon,
+  Key,
   Music2,
+  Palette,
   Pause,
   Pencil,
   Play,
   Rocket,
   RotateCcw,
   Sliders,
+  Sparkles,
   Target,
   Type,
   X,
@@ -18,7 +22,9 @@ import { useEffect, useRef, useState } from "react";
 import type { NewLaunch } from "@/types/launch";
 import { useBackgroundAudio } from "@/hooks/useBackgroundAudio";
 import { useEventTitle } from "@/hooks/useEventTitle";
+import { useThemeConfig } from "@/hooks/useThemeConfig";
 import { useTimerStatus } from "@/hooks/useTimerStatus";
+import { extractDominantColor } from "@/lib/themeStore";
 import { HARKIRAT_FAVOURITES } from "@/lib/youtubeConfig";
 import { BackgroundAudio } from "./BackgroundAudio";
 import { TimerEditor } from "./Countdown";
@@ -41,7 +47,7 @@ function normalizeUrl(url: string): string {
 }
 
 export function AdminPanel({ open, onClose, onSubmit }: Props) {
-  const [activeTab, setActiveTab] = useState<"timer" | "audio" | "pomodoro" | "launch">("timer");
+  const [activeTab, setActiveTab] = useState<"timer" | "audio" | "pomodoro" | "theme" | "launch">("timer");
 
   const [form, setForm] = useState(empty);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +61,12 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
   const { status, isRunning, isPaused, startTimer, pauseTimer, resumeTimer, stopTimer } =
     useTimerStatus();
   const { youtube, setYouTube } = useBackgroundAudio();
+
+  // Theme Config
+  const theme = useThemeConfig();
+  const [posterUrlInput, setPosterUrlInput] = useState(theme.posterUrl || "");
+  const [geminiKeyInput, setGeminiKeyInput] = useState(theme.geminiApiKey || "");
+  const [extracting, setExtracting] = useState(false);
 
   useEffect(() => {
     if (open) setTitleDraft(title);
@@ -76,6 +88,42 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
       setYouTube(HARKIRAT_FAVOURITES[0]);
     }
     startTimer();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      const dataUrl = evt.target?.result as string;
+      setPosterUrlInput(dataUrl);
+      setExtracting(true);
+      const extractedHex = await extractDominantColor(dataUrl);
+      setExtracting(false);
+
+      theme.setTheme({
+        mode: "custom",
+        posterUrl: dataUrl,
+        accentColor: extractedHex,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePosterUrlSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!posterUrlInput.trim()) return;
+
+    setExtracting(true);
+    const extractedHex = await extractDominantColor(posterUrlInput.trim());
+    setExtracting(false);
+
+    theme.setTheme({
+      mode: "custom",
+      posterUrl: posterUrlInput.trim(),
+      accentColor: extractedHex,
+    });
   };
 
   const updateForm = (key: keyof typeof empty) => (
@@ -137,7 +185,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                   Control & Admin Center
                 </div>
                 <p className="mt-1 text-xs text-muted">
-                  Control the live countdown, YouTube music, focus modes, and launches.
+                  Control the live countdown, theme, music, focus modes, and launches.
                 </p>
               </div>
               <button
@@ -150,54 +198,66 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
             </div>
 
             {/* Admin Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5">
               <button
                 type="button"
                 onClick={() => setActiveTab("timer")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
                   activeTab === "timer"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
                 )}
               >
-                <Clock size={14} /> Timer Controls
+                <Clock size={14} /> Timer
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("audio")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
                   activeTab === "audio"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
                 )}
               >
-                <Music2 size={14} /> Background Music
+                <Music2 size={14} /> Music
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("pomodoro")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
                   activeTab === "pomodoro"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
                 )}
               >
-                <Target size={14} /> Focus & Tasks
+                <Target size={14} /> Focus
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("theme")}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  activeTab === "theme"
+                    ? "bg-accent text-black shadow-sm"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                <Palette size={14} /> Theme
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("launch")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
                   activeTab === "launch"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
                 )}
               >
-                <Rocket size={14} /> Add Launch
+                <Rocket size={14} /> Launch
               </button>
             </div>
 
@@ -307,7 +367,133 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
               </div>
             )}
 
-            {/* TAB 4: ADD LAUNCH */}
+            {/* TAB 4: THEME & POSTER PALETTE GENERATOR */}
+            {activeTab === "theme" && (
+              <div className="space-y-5">
+                {/* Theme Mode Selector */}
+                <div className="flex gap-2 p-1 rounded-2xl border border-[var(--border)] bg-black/20">
+                  <button
+                    type="button"
+                    onClick={() => theme.setTheme({ mode: "default" })}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                      theme.mode === "default"
+                        ? "bg-accent text-black shadow-md"
+                        : "text-muted hover:text-foreground"
+                    )}
+                  >
+                    <span>Default Mode</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => theme.setTheme({ mode: "custom" })}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2",
+                      theme.mode === "custom"
+                        ? "bg-accent text-black shadow-md"
+                        : "text-muted hover:text-foreground"
+                    )}
+                  >
+                    <Sparkles size={14} />
+                    <span>Custom Poster Mode</span>
+                  </button>
+                </div>
+
+                {/* Custom Poster Color Extraction Section */}
+                <div className="rounded-2xl border border-[var(--border)] bg-white/[0.02] p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+                      <ImageIcon size={16} />
+                      <span>Event Poster Palette Extractor</span>
+                    </div>
+                    <span className="text-[11px] text-muted">Canvas AI Extraction</span>
+                  </div>
+
+                  <p className="text-xs text-muted leading-relaxed">
+                    Upload your event poster or paste its URL. The engine automatically extracts the poster&apos;s dominant color combinations to theme the entire app!
+                  </p>
+
+                  {/* Upload File Input */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-semibold text-foreground">
+                      Upload Poster Image File:
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="block w-full text-xs text-muted file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-accent file:text-black hover:file:bg-accent/90 cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Poster URL Form */}
+                  <form onSubmit={handlePosterUrlSubmit} className="flex gap-2">
+                    <input
+                      type="url"
+                      value={posterUrlInput}
+                      onChange={(e) => setPosterUrlInput(e.target.value)}
+                      placeholder="Or paste poster image URL..."
+                      className="admin-input flex-1"
+                    />
+                    <button
+                      type="submit"
+                      disabled={extracting}
+                      className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-black hover:bg-accent/90 transition-all shrink-0"
+                    >
+                      {extracting ? "Extracting..." : "Extract Theme"}
+                    </button>
+                  </form>
+
+                  {/* Accent Color Swatch & Manual Override */}
+                  <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-medium text-muted">
+                        Extracted Accent Color:
+                      </span>
+                      <div
+                        className="h-6 w-6 rounded-full border border-white/20 shadow-md"
+                        style={{ backgroundColor: theme.accentColor }}
+                      />
+                      <span className="font-mono text-xs font-bold text-foreground">
+                        {theme.accentColor}
+                      </span>
+                    </div>
+
+                    <input
+                      type="color"
+                      value={theme.accentColor}
+                      onChange={(e) =>
+                        theme.setTheme({ mode: "custom", accentColor: e.target.value })
+                      }
+                      className="h-8 w-12 cursor-pointer rounded-lg border border-[var(--border)] bg-transparent p-0.5"
+                    />
+                  </div>
+
+                  {/* Optional Gemini API Key Input */}
+                  <div className="pt-3 border-t border-[var(--border)] space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-muted">
+                      <Key size={13} className="text-accent" />
+                      <span>Optional Gemini API Key (For AI Palette Styling):</span>
+                    </div>
+                    <input
+                      type="password"
+                      value={geminiKeyInput}
+                      onChange={(e) => {
+                        setGeminiKeyInput(e.target.value);
+                        theme.setTheme({ geminiApiKey: e.target.value });
+                      }}
+                      placeholder="AIzaSy..."
+                      className="admin-input text-xs"
+                    />
+                    <p className="text-[11px] text-muted/70">
+                      If provided, Gemini API enhances poster color palette classification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 5: ADD LAUNCH */}
             {activeTab === "launch" && (
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <Field label="Builder Name">
