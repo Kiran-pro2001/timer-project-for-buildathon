@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  Check,
   Clock,
   Image as ImageIcon,
   Key,
@@ -24,7 +25,11 @@ import { useBackgroundAudio } from "@/hooks/useBackgroundAudio";
 import { useEventTitle } from "@/hooks/useEventTitle";
 import { useThemeConfig } from "@/hooks/useThemeConfig";
 import { useTimerStatus } from "@/hooks/useTimerStatus";
-import { extractDominantColor } from "@/lib/themeStore";
+import {
+  analyzePosterCanvas,
+  analyzePosterGemini,
+  type DesignSense,
+} from "@/lib/themeStore";
 import { HARKIRAT_FAVOURITES } from "@/lib/youtubeConfig";
 import { BackgroundAudio } from "./BackgroundAudio";
 import { TimerEditor } from "./Countdown";
@@ -90,7 +95,29 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
     startTimer();
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const processPosterImage = async (imageUrl: string) => {
+    setExtracting(true);
+    let senses: DesignSense[] = [];
+    if (geminiKeyInput.trim()) {
+      senses = await analyzePosterGemini(imageUrl, geminiKeyInput.trim());
+    } else {
+      senses = await analyzePosterCanvas(imageUrl);
+    }
+    setExtracting(false);
+
+    const firstSense = senses[0];
+    theme.setTheme({
+      mode: "custom",
+      posterUrl: imageUrl,
+      designSenses: senses,
+      selectedSenseId: firstSense?.id || null,
+      accentColor: firstSense?.primaryColor || "#FFD700",
+      secondaryColor: firstSense?.secondaryColor || "#1A1A24",
+      fontStyle: firstSense?.fontStyle || "sans",
+    });
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -98,15 +125,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
     reader.onload = async (evt) => {
       const dataUrl = evt.target?.result as string;
       setPosterUrlInput(dataUrl);
-      setExtracting(true);
-      const extractedHex = await extractDominantColor(dataUrl);
-      setExtracting(false);
-
-      theme.setTheme({
-        mode: "custom",
-        posterUrl: dataUrl,
-        accentColor: extractedHex,
-      });
+      await processPosterImage(dataUrl);
     };
     reader.readAsDataURL(file);
   };
@@ -114,15 +133,16 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
   const handlePosterUrlSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!posterUrlInput.trim()) return;
+    await processPosterImage(posterUrlInput.trim());
+  };
 
-    setExtracting(true);
-    const extractedHex = await extractDominantColor(posterUrlInput.trim());
-    setExtracting(false);
-
+  const selectSense = (sense: DesignSense) => {
     theme.setTheme({
       mode: "custom",
-      posterUrl: posterUrlInput.trim(),
-      accentColor: extractedHex,
+      selectedSenseId: sense.id,
+      accentColor: sense.primaryColor,
+      secondaryColor: sense.secondaryColor,
+      fontStyle: sense.fontStyle,
     });
   };
 
@@ -367,7 +387,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
               </div>
             )}
 
-            {/* TAB 4: THEME & POSTER PALETTE GENERATOR */}
+            {/* TAB 4: THEME & POSTER 3 DESIGN SENSES GENERATOR */}
             {activeTab === "theme" && (
               <div className="space-y-5">
                 {/* Theme Mode Selector */}
@@ -399,18 +419,18 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                   </button>
                 </div>
 
-                {/* Custom Poster Color Extraction Section */}
+                {/* Poster Analysis & Upload */}
                 <div className="rounded-2xl border border-[var(--border)] bg-white/[0.02] p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
                       <ImageIcon size={16} />
-                      <span>Event Poster Palette Extractor</span>
+                      <span>Poster AI Design Senses Generator</span>
                     </div>
-                    <span className="text-[11px] text-muted">Canvas AI Extraction</span>
+                    <span className="text-[11px] text-muted">3 Design Senses</span>
                   </div>
 
                   <p className="text-xs text-muted leading-relaxed">
-                    Upload your event poster or paste its URL. The engine automatically extracts the poster&apos;s dominant color combinations to theme the entire app!
+                    Upload your event poster. The AI engine classifies colors and font styles to generate 3 design senses for you to choose from!
                   </p>
 
                   {/* Upload File Input */}
@@ -440,41 +460,13 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                       disabled={extracting}
                       className="rounded-xl bg-accent px-4 py-2 text-xs font-semibold text-black hover:bg-accent/90 transition-all shrink-0"
                     >
-                      {extracting ? "Extracting..." : "Extract Theme"}
+                      {extracting ? "Analyzing AI..." : "Generate 3 Senses"}
                     </button>
                   </form>
 
-                  {/* Accent Color Swatch & Manual Override */}
-                  <div className="pt-3 border-t border-[var(--border)] flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-medium text-muted">
-                        Extracted Accent Color:
-                      </span>
-                      <div
-                        className="h-6 w-6 rounded-full border border-white/20 shadow-md"
-                        style={{ backgroundColor: theme.accentColor }}
-                      />
-                      <span className="font-mono text-xs font-bold text-foreground">
-                        {theme.accentColor}
-                      </span>
-                    </div>
-
-                    <input
-                      type="color"
-                      value={theme.accentColor}
-                      onChange={(e) =>
-                        theme.setTheme({ mode: "custom", accentColor: e.target.value })
-                      }
-                      className="h-8 w-12 cursor-pointer rounded-lg border border-[var(--border)] bg-transparent p-0.5"
-                    />
-                  </div>
-
-                  {/* Optional Gemini API Key Input */}
-                  <div className="pt-3 border-t border-[var(--border)] space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold text-muted">
-                      <Key size={13} className="text-accent" />
-                      <span>Optional Gemini API Key (For AI Palette Styling):</span>
-                    </div>
+                  {/* Gemini API Key Optional Input */}
+                  <div className="pt-2 flex items-center gap-2">
+                    <Key size={13} className="text-accent shrink-0" />
                     <input
                       type="password"
                       value={geminiKeyInput}
@@ -482,14 +474,89 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                         setGeminiKeyInput(e.target.value);
                         theme.setTheme({ geminiApiKey: e.target.value });
                       }}
-                      placeholder="AIzaSy..."
-                      className="admin-input text-xs"
+                      placeholder="Enter Gemini API Key (Optional for Gemini 1.5 AI)"
+                      className="admin-input !py-1 text-xs"
                     />
-                    <p className="text-[11px] text-muted/70">
-                      If provided, Gemini API enhances poster color palette classification.
-                    </p>
                   </div>
                 </div>
+
+                {/* 3 Design Senses Output Cards */}
+                {theme.designSenses.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-accent" />
+                      <span>Select 1 of 3 Generated Design Senses:</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {theme.designSenses.map((sense) => {
+                        const isSelected = theme.selectedSenseId === sense.id;
+                        return (
+                          <div
+                            key={sense.id}
+                            className={cn(
+                              "rounded-2xl border p-4 transition-all flex flex-col justify-between space-y-3",
+                              isSelected
+                                ? "border-accent bg-accent/10 shadow-lg ring-1 ring-accent"
+                                : "border-[var(--border)] bg-black/20 hover:border-accent/40"
+                            )}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-foreground">
+                                  {sense.name}
+                                </h4>
+                                {isSelected && (
+                                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-black">
+                                    <Check size={12} />
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-muted mt-1 leading-normal">
+                                {sense.description}
+                              </p>
+                            </div>
+
+                            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted">Primary:</span>
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="h-4 w-4 rounded-full border border-white/20"
+                                    style={{ backgroundColor: sense.primaryColor }}
+                                  />
+                                  <span className="font-mono text-[10px] text-foreground">
+                                    {sense.primaryColor}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="text-muted">Font Style:</span>
+                                <span className="font-mono uppercase font-semibold text-accent text-[10px]">
+                                  {sense.fontStyle}
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => selectSense(sense)}
+                                className={cn(
+                                  "w-full py-1.5 rounded-xl text-xs font-bold transition-all mt-2",
+                                  isSelected
+                                    ? "bg-accent text-black"
+                                    : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
+                                )}
+                              >
+                                {isSelected ? "Active Theme" : "Apply Sense"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

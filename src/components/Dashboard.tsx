@@ -98,81 +98,89 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
 
   const handleClosed = useCallback(() => {
     setConfettiFire((n) => n + 1);
-    setCompletionModalOpen(true); // Open Overtime Extender Popup!
+    setCompletionModalOpen(true);
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden">
+    <main className="relative min-h-screen overflow-x-hidden">
       <Background />
       <Fireworks fire={fireworksFire} />
       <Confetti fire={confettiFire} />
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col gap-10 px-6 py-6 sm:px-8 sm:py-8 lg:gap-12">
-        {/* Header */}
-        <header className="flex items-center justify-end">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={toggleMute}
-              aria-label={muted ? "Unmute sound" : "Mute sound"}
-              title={muted ? "Sound off" : "Sound on"}
-              className="flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] p-2 text-muted backdrop-blur-sm transition-colors hover:text-foreground"
-            >
-              {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-            </button>
-            <button
-              onClick={openAdmin}
-              className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent backdrop-blur-md transition-all hover:bg-accent/20 active:scale-95 shadow-md"
-            >
-              <Sliders size={15} />
-              <span>Admin & Controls</span>
-              <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
-                A
-              </kbd>
-            </button>
-          </div>
-        </header>
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col justify-between px-6 py-4 sm:px-8 sm:py-6">
+        {/* FIRST FOLD CONTAINER: Fits exactly 100vh on screen */}
+        <div className="flex min-h-[calc(100vh-3rem)] flex-col justify-between items-center py-2">
+          {/* Top Right Header Controls */}
+          <header className="flex w-full items-center justify-end">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleMute}
+                aria-label={muted ? "Unmute sound" : "Mute sound"}
+                title={muted ? "Sound off" : "Sound on"}
+                className="flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] p-2 text-muted backdrop-blur-sm transition-colors hover:text-foreground"
+              >
+                {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+              <button
+                onClick={openAdmin}
+                className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent backdrop-blur-md transition-all hover:bg-accent/20 active:scale-95 shadow-md"
+              >
+                <Sliders size={15} />
+                <span>Admin & Controls</span>
+                <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
+                  A
+                </kbd>
+              </button>
+            </div>
+          </header>
 
-        {/* Clean Presentation View: Hero + Focus Countdown + Motivation Quote */}
-        <section className="flex flex-col items-center gap-8 pt-2 lg:gap-10">
-          <Hero />
-          <Countdown onClosed={handleClosed} />
-          <div className="w-full max-w-2xl pt-2">
+          {/* Core Presentation Focus: Hero Title + Big Stopwatch */}
+          <div className="flex flex-col items-center justify-center my-auto py-4">
+            <Hero />
+            <Countdown onClosed={handleClosed} />
+          </div>
+
+          {/* Motivation Quote: Bottom of 1st Fold */}
+          <div className="w-full max-w-2xl text-center pb-2">
             <MotivationQuote />
           </div>
-        </section>
+        </div>
 
-        {/* Billboard spotlight — appears when a launch is featured */}
-        <LaunchBillboard
-          featured={featured?.launch ?? null}
-          until={featured?.until ?? 0}
-          onClose={() => setFeatured(null)}
-        />
-
-        {/* Gamified hype strip */}
-        <HypeBar points={hype.points} combo={hype.combo} hype={hype.hype} />
-
-        {/* Stats */}
-        <StatsBar launches={launches} />
-
-        {/* Live feed — full width, the main event */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <LaunchFeed
-            launches={launches}
-            ready={ready}
-            onBillboard={billboard}
-            onDelete={deleteLaunch}
-            onClearAll={clearAllLaunches}
+        {/* SECOND FOLD CONTENT: Scrolls below 100vh */}
+        <div className="mt-12 space-y-10 pt-6 border-t border-[var(--border)]/40">
+          {/* Billboard spotlight — appears when a launch is featured */}
+          <LaunchBillboard
+            featured={featured?.launch ?? null}
+            until={featured?.until ?? 0}
+            onClose={() => setFeatured(null)}
           />
-        </motion.div>
 
-        {/* Footer */}
-        <footer className="mt-auto pt-6">
-          <BrandingBottom />
-        </footer>
+          {/* Gamified hype strip */}
+          <HypeBar points={hype.points} combo={hype.combo} hype={hype.hype} />
+
+          {/* Stats */}
+          <StatsBar launches={launches} />
+
+          {/* Live feed — full width */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <LaunchFeed
+              launches={launches}
+              ready={ready}
+              onBillboard={billboard}
+              onDelete={deleteLaunch}
+              onClearAll={clearAllLaunches}
+            />
+          </motion.div>
+
+          {/* Footer */}
+          <footer className="pt-6">
+            <BrandingBottom />
+          </footer>
+        </div>
       </div>
 
       <AdminPanel
