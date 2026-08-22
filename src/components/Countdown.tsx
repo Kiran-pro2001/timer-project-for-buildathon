@@ -51,31 +51,93 @@ function Colon() {
   );
 }
 
+interface NumberSpinnerInputProps {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (val: number) => void;
+}
+
+function NumberSpinnerInput({ label, value, min, max, onChange }: NumberSpinnerInputProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      onChange(value >= max ? min : value + 1);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      onChange(value <= min ? max : value - 1);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const parsed = parseInt(e.target.value, 10);
+    if (!isNaN(parsed)) {
+      const clamped = Math.max(min, Math.min(max, parsed));
+      onChange(clamped);
+    } else if (e.target.value === "") {
+      onChange(0);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
+        {label}
+      </span>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onChange(value <= min ? max : value - 1)}
+          className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground active:scale-95 transition-all"
+        >
+          <Minus size={13} />
+        </button>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          value={pad(value)}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          className="w-12 sm:w-14 text-center font-mono text-xl sm:text-2xl font-bold text-foreground bg-black/40 border border-[var(--border)] rounded-xl py-0.5 outline-none focus:border-accent focus:ring-1 focus:ring-accent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={() => onChange(value >= max ? min : value + 1)}
+          className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground active:scale-95 transition-all"
+        >
+          <Plus size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /** Alarm-Clock style interactive timer duration editor */
-function TimerEditor({ onDone }: { onDone: () => void }) {
+export function TimerEditor({ onDone }: { onDone: () => void }) {
   const { time, setTime } = useLaunchEnd();
 
   const [hours, setHours] = useState(3);
   const [minutes, setMinutes] = useState(28);
   const [seconds, setSeconds] = useState(0);
-  const [applied, setApplied] = useState(false);
 
-  const applyDuration = (h: number, m: number, s: number = 0) => {
+  const applyDurationAndClose = (h: number, m: number, s: number = 0) => {
     const totalMs = (h * 3600 + m * 60 + s) * 1000;
     const end = new Date(Date.now() + totalMs);
     setTime(end.getHours(), end.getMinutes());
-    setApplied(true);
-    setTimeout(() => setApplied(false), 1500);
+    onDone(); // Automatically close editor window on set!
   };
 
   const handleApply = () => {
-    applyDuration(hours, minutes, seconds);
+    applyDurationAndClose(hours, minutes, seconds);
   };
 
   const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const [h, m] = e.target.value.split(":").map(Number);
     if (Number.isFinite(h) && Number.isFinite(m)) {
       setTime(h, m);
+      onDone();
     }
   };
 
@@ -84,7 +146,7 @@ function TimerEditor({ onDone }: { onDone: () => void }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
-      className="mt-6 w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-6 backdrop-blur-md shadow-2xl"
+      className="mt-6 w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-5 sm:p-6 backdrop-blur-md shadow-2xl overflow-hidden"
     >
       <div className="mb-4 flex items-center justify-between gap-3 border-b border-[var(--border)] pb-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -101,174 +163,85 @@ function TimerEditor({ onDone }: { onDone: () => void }) {
         </button>
       </div>
 
-      {/* Alarm Clock Spinner Controls (Hours, Minutes, Seconds) */}
-      <div className="my-4 flex items-center justify-center gap-4 sm:gap-6 bg-black/30 p-4 rounded-2xl border border-[var(--border)]">
-        {/* Hours Spinner */}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
-            Hours
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setHours((h) => Math.max(0, h - 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-10 text-center font-mono text-2xl font-bold text-foreground">
-              {pad(hours)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setHours((h) => Math.min(24, h + 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        </div>
+      {/* Alarm Clock Responsive Input Spinners */}
+      <div className="my-4 flex flex-wrap items-center justify-center gap-2 sm:gap-4 bg-black/30 p-3 sm:p-4 rounded-2xl border border-[var(--border)] max-w-full">
+        <NumberSpinnerInput
+          label="Hours"
+          value={hours}
+          min={0}
+          max={24}
+          onChange={setHours}
+        />
 
-        <span className="font-mono text-2xl font-bold text-muted/40 pb-1">:</span>
+        <span className="font-mono text-xl sm:text-2xl font-bold text-muted/40 pb-1">:</span>
 
-        {/* Minutes Spinner */}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
-            Minutes
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMinutes((m) => (m <= 0 ? 59 : m - 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-10 text-center font-mono text-2xl font-bold text-foreground">
-              {pad(minutes)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setMinutes((m) => (m >= 59 ? 0 : m + 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        </div>
+        <NumberSpinnerInput
+          label="Minutes"
+          value={minutes}
+          min={0}
+          max={59}
+          onChange={setMinutes}
+        />
 
-        <span className="font-mono text-2xl font-bold text-muted/40 pb-1">:</span>
+        <span className="font-mono text-xl sm:text-2xl font-bold text-muted/40 pb-1">:</span>
 
-        {/* Seconds Spinner */}
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted mb-1">
-            Seconds
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSeconds((s) => (s <= 0 ? 59 : s - 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-10 text-center font-mono text-2xl font-bold text-foreground">
-              {pad(seconds)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setSeconds((s) => (s >= 59 ? 0 : s + 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-white/10 hover:text-foreground"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        </div>
+        <NumberSpinnerInput
+          label="Seconds"
+          value={seconds}
+          min={0}
+          max={59}
+          onChange={setSeconds}
+        />
       </div>
 
       {/* Preset Duration Chips */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-1.5 sm:gap-2">
         <span className="text-xs text-muted pr-1">Quick Presets:</span>
         <button
           type="button"
-          onClick={() => {
-            setHours(3);
-            setMinutes(28);
-            setSeconds(0);
-            applyDuration(3, 28, 0);
-          }}
+          onClick={() => applyDurationAndClose(3, 28, 0)}
           className="rounded-lg border border-accent/40 bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
         >
           3h 28m
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(0);
-            setMinutes(30);
-            setSeconds(0);
-            applyDuration(0, 30, 0);
-          }}
+          onClick={() => applyDurationAndClose(0, 30, 0)}
           className="rounded-lg border border-[var(--border)] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent/40 hover:text-foreground"
         >
           30m
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(1);
-            setMinutes(0);
-            setSeconds(0);
-            applyDuration(1, 0, 0);
-          }}
+          onClick={() => applyDurationAndClose(1, 0, 0)}
           className="rounded-lg border border-[var(--border)] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent/40 hover:text-foreground"
         >
           1h
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(2);
-            setMinutes(0);
-            setSeconds(0);
-            applyDuration(2, 0, 0);
-          }}
+          onClick={() => applyDurationAndClose(2, 0, 0)}
           className="rounded-lg border border-[var(--border)] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent/40 hover:text-foreground"
         >
           2h
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(4);
-            setMinutes(0);
-            setSeconds(0);
-            applyDuration(4, 0, 0);
-          }}
+          onClick={() => applyDurationAndClose(4, 0, 0)}
           className="rounded-lg border border-[var(--border)] bg-white/[0.03] px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-accent/40 hover:text-foreground"
         >
           4h
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(6);
-            setMinutes(0);
-            setSeconds(0);
-            applyDuration(6, 0, 0);
-          }}
+          onClick={() => applyDurationAndClose(6, 0, 0)}
           className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
         >
           6h
         </button>
         <button
           type="button"
-          onClick={() => {
-            setHours(12);
-            setMinutes(0);
-            setSeconds(0);
-            applyDuration(12, 0, 0);
-          }}
+          onClick={() => applyDurationAndClose(12, 0, 0)}
           className="rounded-lg border border-accent/30 bg-accent/5 px-2.5 py-1 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
         >
           12h
@@ -277,7 +250,7 @@ function TimerEditor({ onDone }: { onDone: () => void }) {
 
       {/* Target Clock Time Picker */}
       <div className="pt-3 border-t border-[var(--border)] space-y-1">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <span className="text-xs uppercase tracking-wide text-muted font-medium">
               Or End Clock Time (e.g. 5:44 PM)
@@ -299,10 +272,10 @@ function TimerEditor({ onDone }: { onDone: () => void }) {
       <button
         type="button"
         onClick={handleApply}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-sm font-semibold text-black transition-transform active:scale-[0.98] hover:bg-accent/90"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-sm font-semibold text-black transition-transform active:scale-[0.98] hover:bg-accent/90 shadow-lg"
       >
-        {applied ? <Check size={16} /> : <Clock size={16} />}
-        {applied ? "Applied Custom Timer!" : "Set Alarm Timer Duration"}
+        <Check size={16} />
+        Set Alarm Timer Duration
       </button>
     </motion.div>
   );
@@ -390,58 +363,6 @@ export function Countdown({ onClosed }: Props) {
             : "Under 30 minutes left"}
         </motion.div>
       )}
-
-      {/* Main Timer Action Bar */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-        {isRunning ? (
-          <button
-            type="button"
-            onClick={pauseTimer}
-            className="flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-6 py-2.5 text-sm font-bold text-amber-400 shadow-md backdrop-blur-sm transition-all hover:bg-amber-500/20 active:scale-[0.98]"
-          >
-            <Pause size={16} /> Pause Timer
-          </button>
-        ) : isPaused ? (
-          <button
-            type="button"
-            onClick={resumeTimer}
-            className="flex items-center gap-2 rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-black shadow-lg transition-all hover:bg-accent/90 active:scale-[0.98]"
-          >
-            <Play size={16} /> Resume Timer
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleStartTimer}
-            className="flex items-center gap-2 rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-black shadow-lg transition-all hover:bg-accent/90 active:scale-[0.98]"
-          >
-            <Play size={16} /> Start Timer
-          </button>
-        )}
-
-        {(isRunning || isPaused) && (
-          <button
-            type="button"
-            onClick={stopTimer}
-            className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium text-muted backdrop-blur-sm transition-colors hover:text-foreground active:scale-[0.98]"
-          >
-            <RotateCcw size={15} /> Reset
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => setEditing((v) => !v)}
-          className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-4 py-2.5 text-sm font-medium text-muted backdrop-blur-sm transition-colors hover:text-foreground"
-        >
-          <Pencil size={14} />
-          {editing ? "Hide editor" : "Edit timer"}
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {editing && <TimerEditor onDone={() => setEditing(false)} />}
-      </AnimatePresence>
     </div>
   );
 }

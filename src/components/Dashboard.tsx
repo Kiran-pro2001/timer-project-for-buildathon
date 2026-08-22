@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Plus, Volume2, VolumeX } from "lucide-react";
+import { Sliders, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { Launch } from "@/types/launch";
 import { SPOTLIGHT_MS } from "@/lib/config";
 import { playLaunchSound, setMuted, unlockAudio } from "@/lib/sound";
 import { BrandingBottom } from "./Branding";
 import { Background } from "./Background";
-import { BackgroundAudio } from "./BackgroundAudio";
 import { Confetti } from "./Confetti";
 import { Countdown } from "./Countdown";
 import { Fireworks } from "./Fireworks";
@@ -17,7 +16,6 @@ import { HypeBar } from "./HypeBar";
 import { LaunchBillboard } from "./LaunchBillboard";
 import { LaunchFeed } from "./LaunchFeed";
 import { MotivationQuote } from "./MotivationQuote";
-import { PomodoroTaskPanel } from "./PomodoroTaskPanel";
 import { StatsBar } from "./StatsBar";
 import { AdminPanel } from "./AdminPanel";
 import { useAdminHotkey } from "@/hooks/useAdminHotkey";
@@ -117,26 +115,24 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
             </button>
             <button
               onClick={openAdmin}
-              className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--card)] px-3.5 py-1.5 text-sm font-medium text-muted backdrop-blur-sm transition-colors hover:text-foreground"
+              className="flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent backdrop-blur-md transition-all hover:bg-accent/20 active:scale-95 shadow-md"
             >
-              <Plus size={15} />
-              <span className="hidden sm:inline">Add launch</span>
-              <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-xs">
+              <Sliders size={15} />
+              <span>Admin & Controls</span>
+              <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10px] text-foreground">
                 A
               </kbd>
             </button>
           </div>
         </header>
 
-        {/* Hero + Countdown + Quote + Background Audio + Pomodoro & Tasks */}
-        <section className="flex flex-col items-center gap-10 pt-2 lg:gap-12">
+        {/* Clean Presentation View: Hero + Focus Countdown + Motivation Quote */}
+        <section className="flex flex-col items-center gap-8 pt-2 lg:gap-10">
           <Hero />
           <Countdown onClosed={handleClosed} />
-          <div className="w-full max-w-2xl">
+          <div className="w-full max-w-2xl pt-2">
             <MotivationQuote />
           </div>
-          <BackgroundAudio />
-          <PomodoroTaskPanel />
         </section>
 
         {/* Billboard spotlight — appears when a launch is featured */}
