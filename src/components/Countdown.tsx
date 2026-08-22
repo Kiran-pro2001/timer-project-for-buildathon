@@ -357,8 +357,8 @@ export function Countdown({ onClosed }: Props) {
           <motion.div
             key="running"
             className={cn(
-              "tnum font-mono font-extrabold leading-none tracking-tight py-2",
-              "text-[clamp(5.5rem,24vw,18rem)]",
+              "tnum font-mono font-extrabold leading-none tracking-tight flex flex-nowrap items-center justify-center max-w-full whitespace-nowrap py-2",
+              "text-[clamp(3.2rem,12vw,11.5rem)]",
               phase === "critical" && "animate-shake text-accent",
               phase === "warning" && "text-accent",
             )}
