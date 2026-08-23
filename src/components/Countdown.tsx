@@ -47,7 +47,7 @@ function DigitGroup({ value, phase }: { value: number; phase: CountdownPhase }) 
 
 function Colon() {
   return (
-    <span className="mx-1 -translate-y-[0.05em] text-muted/50 sm:mx-2">:</span>
+    <span className="mx-0.5 -translate-y-[0.05em] text-muted/50 sm:mx-1">:</span>
   );
 }
 
@@ -357,8 +357,8 @@ export function Countdown({ onClosed }: Props) {
           <motion.div
             key="running"
             className={cn(
-              "tnum font-mono font-extrabold leading-none tracking-tight flex flex-nowrap items-center justify-center max-w-full whitespace-nowrap py-2",
-              "text-[clamp(3.2rem,12vw,11.5rem)]",
+              "tnum font-mono font-extrabold leading-none tracking-tight py-2 whitespace-nowrap flex items-center justify-center max-w-full",
+              "text-[clamp(3.2rem,13vw,11.5rem)] sm:text-[clamp(4rem,15vw,13.5rem)] lg:text-[clamp(4.8rem,16.5vw,14.5rem)]",
               phase === "critical" && "animate-shake text-accent",
               phase === "warning" && "text-accent",
             )}
