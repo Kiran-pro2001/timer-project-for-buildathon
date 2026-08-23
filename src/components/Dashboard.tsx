@@ -18,6 +18,7 @@ import { LaunchFeed } from "./LaunchFeed";
 import { MotivationQuote } from "./MotivationQuote";
 import { StatsBar } from "./StatsBar";
 import { AdminPanel } from "./AdminPanel";
+import { PersistentAudioEngine } from "./PersistentAudioEngine";
 import { TimerCompletionModal } from "./TimerCompletionModal";
 import { useAdminHotkey } from "@/hooks/useAdminHotkey";
 import { useHype } from "@/hooks/useHype";
@@ -103,6 +104,9 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
 
   return (
     <main className="relative min-h-screen overflow-x-hidden">
+      {/* Persistent YouTube Audio Engine (Runs continuously in background across dialog open/close) */}
+      <PersistentAudioEngine />
+
       <Background />
       <Fireworks fire={fireworksFire} />
       <Confetti fire={confettiFire} />
