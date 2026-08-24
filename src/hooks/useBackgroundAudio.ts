@@ -25,3 +25,4 @@ export function useBackgroundAudio() {
     setVolume: (vol: number) => setVolume(vol),
   };
 }
+
