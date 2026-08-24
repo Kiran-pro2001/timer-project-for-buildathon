@@ -8,10 +8,12 @@
   --card: rgba(255, 255, 255, 0.03);
   --border: rgba(255, 255, 255, 0.08);
 
+  /* hi */
   /* Accent shifts with the countdown phase (set on <html data-phase>) */
   --accent: #22e6a0; /* emerald — normal */
   --accent-soft: rgba(34, 230, 160, 0.14);
   --accent-glow: rgba(34, 230, 160, 0.45);
+  /* Just checking  */
 }
 
 :root[data-phase="warning"] {
