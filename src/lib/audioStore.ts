@@ -10,6 +10,7 @@ let current: AudioState = {
   isPlaying: false,
 };
 
+let lastVolume = 70;
 let hydrated = false;
 const listeners = new Set<() => void>();
 
@@ -24,6 +25,7 @@ function hydrate() {
         current.source = "youtube";
         if (typeof p.volume === "number" && p.volume >= 0 && p.volume <= 100) {
           current.volume = p.volume;
+          if (p.volume > 0) lastVolume = p.volume;
         }
         if (typeof p.isPlaying === "boolean") {
           current.isPlaying = p.isPlaying;
@@ -79,9 +81,20 @@ export function setAudioPlaying(playing: boolean) {
 export function setVolume(volume: number) {
   hydrate();
   const clamped = Math.max(0, Math.min(100, Math.round(volume)));
+  if (clamped > 0) lastVolume = clamped;
   if (current.volume === clamped) return;
   current = { ...current, volume: clamped };
   emit();
+}
+
+export function toggleMute() {
+  hydrate();
+  if (current.volume > 0) {
+    lastVolume = current.volume;
+    setVolume(0);
+  } else {
+    setVolume(lastVolume > 0 ? lastVolume : 70);
+  }
 }
 
 export function subscribeAudioState(cb: () => void) {

@@ -52,7 +52,7 @@ function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?:
 }
 
 export function BackgroundAudio() {
-  const { mounted, youtube, volume, isPlaying, setYouTube, setVolume, setPlaying } =
+  const { mounted, youtube, volume, isPlaying, setYouTube, setVolume, setPlaying, toggleMute } =
     useBackgroundAudio();
   const { status, isRunning, isPaused, startTimer, pauseTimer, resumeTimer, stopTimer } =
     useTimerStatus();
@@ -148,19 +148,20 @@ export function BackgroundAudio() {
     setCustomSavedSongs(updated);
   };
 
-  const handleToggleCardAudio = (sound: YouTubeVideo) => {
+  const handleTrackToggle = (sound: YouTubeVideo) => {
     setValidationError(null);
     setSuccessMsg(null);
 
     const isSelected = youtube?.videoId === sound.videoId;
     if (isSelected) {
+      // Toggle play/pause for the currently selected track
       setPlaying(!isPlaying);
-      setSuccessMsg(isPlaying ? `⏸ Paused ${sound.title}` : `▶ Resumed ${sound.title}`);
     } else {
+      // Switch track and play immediately
       setYouTube(sound, true);
-      setSuccessMsg(`▶ Playing ${sound.title}`);
+      setSuccessMsg(`✓ Playing ${sound.title}`);
+      setTimeout(() => setSuccessMsg(null), 3000);
     }
-    setTimeout(() => setSuccessMsg(null), 3000);
   };
 
   const togglePlayback = () => {
@@ -209,12 +210,10 @@ export function BackgroundAudio() {
             <button
               type="button"
               onClick={togglePlayback}
-              className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/10 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-3.5 py-1.5 text-xs font-bold text-accent hover:bg-accent/20 transition-all active:scale-95 shadow-sm"
             >
-              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
-              <span className="hidden sm:inline">
-                {isPlaying ? "Pause Music" : "Play Music"}
-              </span>
+              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              <span>{isPlaying ? "Pause Music" : "Play Music"}</span>
             </button>
           )}
 
@@ -249,12 +248,13 @@ export function BackgroundAudio() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {HARKIRAT_FAVOURITES.map((sound) => {
                     const isSelected = youtube?.videoId === sound.videoId;
+                    const isThisPlaying = isSelected && isPlaying;
                     return (
                       <div
                         key={sound.id}
                         className={cn(
                           "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
-                          isSelected && isPlaying
+                          isThisPlaying
                             ? "border-accent bg-accent/15 shadow-md"
                             : "border-accent/30 bg-accent/[0.03] hover:border-accent hover:bg-accent/[0.08]"
                         )}
@@ -268,29 +268,26 @@ export function BackgroundAudio() {
                             <span>Harkirat&apos;s Pick</span>
                           </div>
                         </div>
+
                         <button
                           type="button"
-                          onClick={() => handleToggleCardAudio(sound)}
+                          onClick={() => handleTrackToggle(sound)}
                           className={cn(
-                            "flex items-center gap-1 shrink-0 rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
-                            isSelected && isPlaying
-                              ? "bg-amber-500 text-black hover:bg-amber-400"
+                            "flex items-center gap-1.5 shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold transition-all active:scale-95",
+                            isThisPlaying
+                              ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30"
                               : isSelected
-                              ? "bg-accent text-black"
+                              ? "bg-accent text-black hover:bg-accent/90"
                               : "bg-accent/20 text-accent hover:bg-accent hover:text-black"
                           )}
                         >
-                          {isSelected && isPlaying ? (
+                          {isThisPlaying ? (
                             <>
-                              <Pause size={12} /> Pause
-                            </>
-                          ) : isSelected ? (
-                            <>
-                              <Play size={12} /> Resume
+                              <Pause size={13} /> Pause
                             </>
                           ) : (
                             <>
-                              <Play size={12} /> Play
+                              <Play size={13} /> {isSelected ? "Play" : "Select"}
                             </>
                           )}
                         </button>
@@ -314,12 +311,13 @@ export function BackgroundAudio() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {customSavedSongs.map((song) => {
                       const isSelected = youtube?.videoId === song.videoId;
+                      const isThisPlaying = isSelected && isPlaying;
                       return (
                         <div
                           key={song.id}
                           className={cn(
                             "group flex items-center justify-between rounded-xl border p-3 text-left transition-all",
-                            isSelected && isPlaying
+                            isThisPlaying
                               ? "border-accent bg-accent/15 shadow-md"
                               : "border-white/10 bg-white/[0.03] hover:border-accent/50 hover:bg-white/[0.06]"
                           )}
@@ -339,23 +337,17 @@ export function BackgroundAudio() {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => handleToggleCardAudio(song)}
+                              onClick={() => handleTrackToggle(song)}
                               className={cn(
-                                "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
-                                isSelected && isPlaying
-                                  ? "bg-amber-500 text-black hover:bg-amber-400"
-                                  : isSelected
-                                  ? "bg-accent text-black"
+                                "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-all active:scale-95",
+                                isThisPlaying
+                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30"
                                   : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                               )}
                             >
-                              {isSelected && isPlaying ? (
+                              {isThisPlaying ? (
                                 <>
                                   <Pause size={12} /> Pause
-                                </>
-                              ) : isSelected ? (
-                                <>
-                                  <Play size={12} /> Resume
                                 </>
                               ) : (
                                 <>
@@ -438,12 +430,13 @@ export function BackgroundAudio() {
                   {DEFAULT_YOUTUBE_SOUNDS.filter((s) => !s.id.startsWith("harkirat")).map(
                     (sound) => {
                       const isSelected = youtube?.videoId === sound.videoId;
+                      const isThisPlaying = isSelected && isPlaying;
                       return (
                         <div
                           key={sound.id}
                           className={cn(
                             "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
-                            isSelected && isPlaying
+                            isThisPlaying
                               ? "border-accent bg-accent/10 shadow-sm"
                               : "border-[var(--border)] bg-white/[0.02] hover:border-accent/40 hover:bg-white/[0.04]"
                           )}
@@ -459,23 +452,17 @@ export function BackgroundAudio() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleToggleCardAudio(sound)}
+                            onClick={() => handleTrackToggle(sound)}
                             className={cn(
-                              "flex items-center gap-1 shrink-0 rounded-lg px-3 py-1 text-xs font-medium transition-colors",
-                              isSelected && isPlaying
-                                ? "bg-amber-500 text-black hover:bg-amber-400 font-semibold"
-                                : isSelected
-                                ? "bg-accent text-black font-semibold"
-                                : "bg-white/5 text-muted hover:text-foreground"
+                              "flex items-center gap-1 shrink-0 rounded-lg px-3 py-1 text-xs font-medium transition-all active:scale-95",
+                              isThisPlaying
+                                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                : "bg-white/5 text-muted hover:text-foreground hover:bg-accent hover:text-black font-semibold"
                             )}
                           >
-                            {isSelected && isPlaying ? (
+                            {isThisPlaying ? (
                               <>
                                 <Pause size={12} /> Pause
-                              </>
-                            ) : isSelected ? (
-                              <>
-                                <Play size={12} /> Resume
                               </>
                             ) : (
                               <>
@@ -543,12 +530,13 @@ export function BackgroundAudio() {
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                     {history.map((item) => {
                       const isSelected = youtube?.videoId === item.videoId;
+                      const isThisPlaying = isSelected && isPlaying;
                       return (
                         <div
                           key={item.id}
                           className={cn(
                             "flex items-center justify-between rounded-xl p-2.5 border transition-all text-xs",
-                            isSelected && isPlaying
+                            isThisPlaying
                               ? "border-accent bg-accent/10"
                               : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
                           )}
@@ -563,27 +551,21 @@ export function BackgroundAudio() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleToggleCardAudio(item)}
+                            onClick={() => handleTrackToggle(item)}
                             className={cn(
-                              "flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors shrink-0",
-                              isSelected && isPlaying
-                                ? "bg-amber-500 text-black hover:bg-amber-400"
-                                : isSelected
-                                ? "bg-accent text-black"
+                              "flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all shrink-0 active:scale-95",
+                              isThisPlaying
+                                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
                                 : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                             )}
                           >
-                            {isSelected && isPlaying ? (
+                            {isThisPlaying ? (
                               <>
                                 <Pause size={11} /> Pause
                               </>
-                            ) : isSelected ? (
-                              <>
-                                <Play size={11} /> Resume
-                              </>
                             ) : (
                               <>
-                                <Play size={11} /> Play
+                                <Play size={11} /> Replay
                               </>
                             )}
                           </button>
@@ -649,11 +631,11 @@ export function BackgroundAudio() {
               <div className="pt-3 border-t border-[var(--border)] flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setVolume(volume === 0 ? 70 : 0)}
+                  onClick={toggleMute}
                   aria-label={volume === 0 ? "Unmute volume" : "Mute volume"}
                   className="text-muted hover:text-foreground transition-colors"
                 >
-                  {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  {volume === 0 ? <VolumeX size={18} className="text-red-400" /> : <Volume2 size={18} className="text-accent" />}
                 </button>
 
                 <div className="flex-1 flex items-center gap-3">

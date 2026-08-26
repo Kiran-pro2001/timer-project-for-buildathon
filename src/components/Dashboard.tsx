@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Music2, Pause, Play, Sliders, Volume2, VolumeX } from "lucide-react";
+import { Sliders, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { Launch } from "@/types/launch";
 import { SPOTLIGHT_MS } from "@/lib/config";
@@ -26,7 +26,6 @@ import { useHype } from "@/hooks/useHype";
 import { useLaunches } from "@/hooks/useLaunches";
 import { useNewLaunch } from "@/hooks/useNewLaunch";
 import { useThemeConfig } from "@/hooks/useThemeConfig";
-import { cn } from "@/lib/utils";
 
 interface Props {
   /** When mounted from /admin, open the panel immediately. */
@@ -44,13 +43,11 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
   const [confettiFire, setConfettiFire] = useState(0);
   const [fireworksFire, setFireworksFire] = useState(0);
   const [featured, setFeatured] = useState<Featured | null>(null);
-  const [muted, setMutedState] = useState(false);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
 
+  const bgAudio = useBackgroundAudio();
   const hype = useHype();
   useThemeConfig(); // Mounts active theme configuration & CSS properties
-
-  const { youtube, isPlaying, setPlaying } = useBackgroundAudio();
 
   const openAdmin = useCallback(() => setAdminOpen(true), []);
   useAdminHotkey(openAdmin);
@@ -68,12 +65,9 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
   }, []);
 
   const toggleMute = useCallback(() => {
-    setMutedState((m) => {
-      const next = !m;
-      setMuted(next);
-      return next;
-    });
-  }, []);
+    setMuted(!bgAudio.isMuted);
+    bgAudio.toggleMute();
+  }, [bgAudio]);
 
   // Promote a launch to the Billboard: spotlight it + fireworks + sound + points.
   const billboard = useCallback(
@@ -118,46 +112,20 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1400px] flex-col justify-between px-6 py-4 sm:px-8 sm:py-6">
         {/* FIRST FOLD CONTAINER: Fits exactly 100vh on screen */}
         <div className="flex min-h-[calc(100vh-3rem)] flex-col justify-between items-center py-2">
-          {/* Top Header Controls: Universal Background Audio Controller Pill + Admin Button */}
-          <header className="flex w-full items-center justify-between gap-3">
-            {/* Universal Audio Control Widget Pill */}
-            {youtube ? (
-              <div className="flex items-center gap-2.5 rounded-full border border-accent/30 bg-black/40 px-3.5 py-1.5 backdrop-blur-md shadow-md">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-accent/20 text-accent shrink-0">
-                  <Music2 size={12} className={cn(isPlaying && "animate-pulse")} />
-                </div>
-                <div className="flex flex-col max-w-[140px] sm:max-w-[240px] truncate">
-                  <span className="text-[11px] font-bold text-foreground truncate leading-tight">
-                    {youtube.title}
-                  </span>
-                  <span className="text-[9px] text-accent font-mono leading-tight">
-                    {isPlaying ? "Playing Audio" : "Music Paused"}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPlaying(!isPlaying)}
-                  className={cn(
-                    "flex items-center justify-center rounded-full px-2.5 py-1 text-[10px] font-bold transition-transform active:scale-95 shrink-0",
-                    isPlaying
-                      ? "bg-amber-500 text-black hover:bg-amber-400"
-                      : "bg-accent text-black hover:bg-accent/90"
-                  )}
-                >
-                  {isPlaying ? <Pause size={10} /> : <Play size={10} />}
-                  <span className="ml-1">{isPlaying ? "Pause" : "Play"}</span>
-                </button>
-              </div>
-            ) : <div />}
-
-            <div className="flex items-center gap-2 shrink-0">
+          {/* Top Right Header Controls */}
+          <header className="flex w-full items-center justify-end">
+            <div className="flex items-center gap-2">
               <button
                 onClick={toggleMute}
-                aria-label={muted ? "Unmute sound" : "Mute sound"}
-                title={muted ? "Sound off" : "Sound on"}
-                className="flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] p-2 text-muted backdrop-blur-sm transition-colors hover:text-foreground"
+                aria-label={bgAudio.isMuted ? "Unmute sound" : "Mute sound"}
+                title={bgAudio.isMuted ? "Sound muted — click to unmute" : "Sound on — click to mute"}
+                className="flex items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] p-2 text-muted backdrop-blur-sm transition-colors hover:text-foreground active:scale-95 shadow-md"
               >
-                {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                {bgAudio.isMuted ? (
+                  <VolumeX size={16} className="text-red-400" />
+                ) : (
+                  <Volume2 size={16} className="text-accent" />
+                )}
               </button>
               <button
                 onClick={openAdmin}
