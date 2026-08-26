@@ -21,7 +21,6 @@ import {
 import { useEffect, useState } from "react";
 import { useBackgroundAudio } from "@/hooks/useBackgroundAudio";
 import { useTimerStatus } from "@/hooks/useTimerStatus";
-import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import {
   DEFAULT_YOUTUBE_SOUNDS,
   HARKIRAT_FAVOURITES,
@@ -51,10 +50,9 @@ function YoutubeIcon({ size = 16, className = "" }: { size?: number; className?:
   );
 }
 
-const PLAYER_CONTAINER_ID = "youtube-bg-audio-container";
-
 export function BackgroundAudio() {
-  const { mounted, youtube, volume, setYouTube, setVolume } = useBackgroundAudio();
+  const { mounted, youtube, volume, isPlaying, setYouTube, setVolume, setPlaying } =
+    useBackgroundAudio();
   const { status, isRunning, isPaused, startTimer, pauseTimer, resumeTimer, stopTimer } =
     useTimerStatus();
 
@@ -69,7 +67,6 @@ export function BackgroundAudio() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [favValidationError, setFavValidationError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
-  const [previewPlaying, setPreviewPlaying] = useState(false);
 
   const [history, setHistory] = useState<HistoryYouTubeItem[]>([]);
   const [customSavedSongs, setCustomSavedSongs] = useState<CustomSavedSong[]>([]);
@@ -78,17 +75,6 @@ export function BackgroundAudio() {
     setHistory(getRecentYouTubeHistory());
     setCustomSavedSongs(getCustomSavedSongs());
   }, []);
-
-  const shouldPlayAudio = (isRunning || previewPlaying) && status !== "stopped" && status !== "completed";
-  const activeVideoId = youtube?.videoId ?? null;
-
-  const { isReady: isYtReady, error: ytError, forcePlay } = useYouTubePlayer({
-    containerId: PLAYER_CONTAINER_ID,
-    videoId: activeVideoId,
-    volume,
-    enabled: true,
-    isPlaying: shouldPlayAudio,
-  });
 
   const handleAddYouTubeUrl = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,11 +103,9 @@ export function BackgroundAudio() {
 
     const updatedHistory = addRecentYouTubeHistory(newVid);
     setHistory(updatedHistory);
-    setYouTube(newVid);
+    setYouTube(newVid, true);
     setUrlInput("");
-    setPreviewPlaying(true);
-    forcePlay();
-    setSuccessMsg("✓ Custom YouTube audio added & saved to history");
+    setSuccessMsg("✓ Custom YouTube audio added & playing in background");
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
@@ -166,19 +150,13 @@ export function BackgroundAudio() {
   const handleSelectPreset = (sound: typeof DEFAULT_YOUTUBE_SOUNDS[number]) => {
     setValidationError(null);
     setSuccessMsg(null);
-    setYouTube(sound);
-    setPreviewPlaying(true);
-    forcePlay();
+    setYouTube(sound, true);
     setSuccessMsg(`✓ Selected ${sound.title}`);
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
-  const togglePreview = () => {
-    setPreviewPlaying((prev) => {
-      const next = !prev;
-      if (next) forcePlay();
-      return next;
-    });
+  const togglePlayback = () => {
+    setPlaying(!isPlaying);
   };
 
   const handleClearHistory = () => {
@@ -187,15 +165,14 @@ export function BackgroundAudio() {
   };
 
   const removeSelectedYouTube = () => {
-    setYouTube(null);
-    setPreviewPlaying(false);
+    setYouTube(null, false);
     setSuccessMsg(null);
   };
 
   if (!mounted) return null;
 
   return (
-    <div className="w-full max-w-2xl rounded-3xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-md shadow-xl transition-all">
+    <div className="w-full max-w-3xl rounded-3xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-md shadow-xl transition-all">
       {/* Minimized View Header / Control Bar */}
       <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
@@ -207,9 +184,9 @@ export function BackgroundAudio() {
               <h3 className="text-sm font-semibold tracking-tight text-foreground">
                 YouTube Background Audio
               </h3>
-              {isYtReady && (
+              {isPlaying && (
                 <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                  <CheckCircle2 size={10} /> Active
+                  <CheckCircle2 size={10} /> Active & Playing
                 </span>
               )}
             </div>
@@ -223,12 +200,12 @@ export function BackgroundAudio() {
           {youtube && (
             <button
               type="button"
-              onClick={togglePreview}
+              onClick={togglePlayback}
               className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/10 transition-colors"
             >
-              {previewPlaying ? <Pause size={13} /> : <Play size={13} />}
+              {isPlaying ? <Pause size={13} /> : <Play size={13} />}
               <span className="hidden sm:inline">
-                {previewPlaying ? "Pause Preview" : "Preview"}
+                {isPlaying ? "Pause Music" : "Play Music"}
               </span>
             </button>
           )}
@@ -271,7 +248,7 @@ export function BackgroundAudio() {
                         onClick={() => handleSelectPreset(sound)}
                         className={cn(
                           "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
-                          isSelected
+                          isSelected && isPlaying
                             ? "border-accent bg-accent/15 shadow-md"
                             : "border-accent/30 bg-accent/[0.03] hover:border-accent hover:bg-accent/[0.08]"
                         )}
@@ -288,12 +265,12 @@ export function BackgroundAudio() {
                         <span
                           className={cn(
                             "shrink-0 rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
-                            isSelected
+                            isSelected && isPlaying
                               ? "bg-accent text-black"
                               : "bg-accent/20 text-accent group-hover:bg-accent group-hover:text-black"
                           )}
                         >
-                          {isSelected ? "Selected" : "Select"}
+                          {isSelected && isPlaying ? "Playing" : "Select"}
                         </span>
                       </button>
                     );
@@ -320,7 +297,7 @@ export function BackgroundAudio() {
                           key={song.id}
                           className={cn(
                             "group flex items-center justify-between rounded-xl border p-3 text-left transition-all",
-                            isSelected
+                            isSelected && isPlaying
                               ? "border-accent bg-accent/15 shadow-md"
                               : "border-white/10 bg-white/[0.03] hover:border-accent/50 hover:bg-white/[0.06]"
                           )}
@@ -343,12 +320,12 @@ export function BackgroundAudio() {
                               onClick={() => handleSelectPreset(song)}
                               className={cn(
                                 "rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
-                                isSelected
+                                isSelected && isPlaying
                                   ? "bg-accent text-black"
                                   : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                               )}
                             >
-                              {isSelected ? "Selected" : "Play"}
+                              {isSelected && isPlaying ? "Playing" : "Play"}
                             </button>
                             <button
                               type="button"
@@ -432,7 +409,7 @@ export function BackgroundAudio() {
                           onClick={() => handleSelectPreset(sound)}
                           className={cn(
                             "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
-                            isSelected
+                            isSelected && isPlaying
                               ? "border-accent bg-accent/10 shadow-sm"
                               : "border-[var(--border)] bg-white/[0.02] hover:border-accent/40 hover:bg-white/[0.04]"
                           )}
@@ -449,12 +426,12 @@ export function BackgroundAudio() {
                           <span
                             className={cn(
                               "shrink-0 rounded-lg px-3 py-1 text-xs font-medium transition-colors",
-                              isSelected
+                              isSelected && isPlaying
                                 ? "bg-accent text-black font-semibold"
                                 : "bg-white/5 text-muted group-hover:text-foreground"
                             )}
                           >
-                            {isSelected ? "Selected" : "Select"}
+                            {isSelected && isPlaying ? "Playing" : "Select"}
                           </span>
                         </button>
                       );
@@ -521,7 +498,7 @@ export function BackgroundAudio() {
                           key={item.id}
                           className={cn(
                             "flex items-center justify-between rounded-xl p-2.5 border transition-all text-xs",
-                            isSelected
+                            isSelected && isPlaying
                               ? "border-accent bg-accent/10"
                               : "border-white/5 bg-white/[0.02] hover:bg-white/[0.05]"
                           )}
@@ -539,12 +516,12 @@ export function BackgroundAudio() {
                             onClick={() => handleSelectPreset(item)}
                             className={cn(
                               "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors shrink-0",
-                              isSelected
+                              isSelected && isPlaying
                                 ? "bg-accent text-black"
                                 : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                             )}
                           >
-                            {isSelected ? "Playing" : "Replay"}
+                            {isSelected && isPlaying ? "Playing" : "Replay"}
                           </button>
                         </div>
                       );
@@ -574,11 +551,11 @@ export function BackgroundAudio() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={togglePreview}
+                        onClick={togglePlayback}
                         className="flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-white/5 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-white/10 transition-colors"
                       >
-                        {previewPlaying ? <Pause size={13} /> : <Play size={13} />}
-                        {previewPlaying ? "Pause Preview" : "Preview Audio"}
+                        {isPlaying ? <Pause size={13} /> : <Play size={13} />}
+                        {isPlaying ? "Pause Music" : "Play Music"}
                       </button>
                       <button
                         type="button"
@@ -590,13 +567,6 @@ export function BackgroundAudio() {
                       </button>
                     </div>
                   </div>
-
-                  {ytError && (
-                    <div className="mt-3 flex items-center gap-1.5 text-xs text-[#ff6b78] border-t border-[var(--border)] pt-2.5">
-                      <AlertCircle size={13} />
-                      <span>{ytError}</span>
-                    </div>
-                  )}
                 </div>
               )}
 

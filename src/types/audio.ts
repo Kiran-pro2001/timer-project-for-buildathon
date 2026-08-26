@@ -12,6 +12,7 @@ export interface AudioState {
   source: AudioSourceType;
   youtube: YouTubeVideo | null;
   volume: number; // 0 to 100
+  isPlaying?: boolean;
 }
 
 // Minimal YouTube IFrame API declarations for TypeScript

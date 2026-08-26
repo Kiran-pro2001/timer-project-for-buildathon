@@ -82,17 +82,20 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
     };
-    window.addEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKey, true);
     };
   }, [open, onClose]);
 
   const handleStartTimer = () => {
     if (!youtube) {
-      setYouTube(HARKIRAT_FAVOURITES[0]);
+      setYouTube(HARKIRAT_FAVOURITES[0], true);
     }
     startTimer();
   };
@@ -197,7 +200,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             transition={{ type: "spring", stiffness: 320, damping: 30 }}
-            className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[var(--border)] bg-[#0c0c0f]/95 p-6 sm:p-7 shadow-2xl space-y-6"
+            className="relative max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[var(--border)] bg-[#0c0c0f]/95 p-6 sm:p-7 shadow-2xl space-y-6"
           >
             {/* Header */}
             <div className="flex items-start justify-between">
@@ -219,13 +222,13 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
               </button>
             </div>
 
-            {/* Admin Tabs */}
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5">
+            {/* Admin Tabs - All 6 tabs strictly in 1 single horizontal line */}
+            <div className="grid grid-cols-6 gap-1 sm:gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5 whitespace-nowrap overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab("timer")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "timer"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -237,7 +240,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("audio")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "audio"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -249,7 +252,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("pomodoro")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "pomodoro"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -261,7 +264,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("theme")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "theme"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -273,7 +276,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("launch")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "launch"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -285,7 +288,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("focustimer")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-2 text-xs font-semibold transition-all shrink-0 min-w-0",
                   activeTab === "focustimer"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"

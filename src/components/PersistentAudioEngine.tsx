@@ -8,15 +8,16 @@ const PLAYER_CONTAINER_ID = "youtube-bg-audio-container";
 
 /**
  * Persistent YouTube Audio Host.
- * Mounts at root layout level so closing dialog boxes / switching tabs
- * NEVER unmounts the YouTube iframe or stops background music!
+ * Mounts permanently at root layout level so closing dialog boxes,
+ * clicking mouse X, or switching tabs NEVER unmounts the YouTube player!
  */
 export function PersistentAudioEngine() {
-  const { mounted, youtube, volume } = useBackgroundAudio();
+  const { mounted, youtube, volume, isPlaying } = useBackgroundAudio();
   const { status, isRunning } = useTimerStatus();
 
-  // Play audio when timer is active or music is selected
-  const shouldPlayAudio = isRunning && status !== "stopped" && status !== "completed";
+  // Play audio when timer is active OR when user requested music playback manually
+  const shouldPlayAudio =
+    (isRunning || isPlaying) && status !== "stopped" && status !== "completed";
   const activeVideoId = youtube?.videoId ?? null;
 
   useYouTubePlayer({

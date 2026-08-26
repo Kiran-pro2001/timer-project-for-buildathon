@@ -7,6 +7,7 @@ let current: AudioState = {
   source: "youtube",
   youtube: HARKIRAT_FAVOURITES[0],
   volume: 70,
+  isPlaying: false,
 };
 
 let hydrated = false;
@@ -23,6 +24,9 @@ function hydrate() {
         current.source = "youtube";
         if (typeof p.volume === "number" && p.volume >= 0 && p.volume <= 100) {
           current.volume = p.volume;
+        }
+        if (typeof p.isPlaying === "boolean") {
+          current.isPlaying = p.isPlaying;
         }
         if (p.youtube && typeof p.youtube === "object" && p.youtube.videoId) {
           current.youtube = {
@@ -60,9 +64,15 @@ export function getAudioState(): AudioState {
   return current;
 }
 
-export function setYouTubeVideo(video: YouTubeVideo | null) {
+export function setYouTubeVideo(video: YouTubeVideo | null, playImmediately: boolean = true) {
   hydrate();
-  current = { ...current, youtube: video };
+  current = { ...current, youtube: video, isPlaying: playImmediately && Boolean(video) };
+  emit();
+}
+
+export function setAudioPlaying(playing: boolean) {
+  hydrate();
+  current = { ...current, isPlaying: playing && Boolean(current.youtube) };
   emit();
 }
 

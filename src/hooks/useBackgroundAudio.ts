@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import type { YouTubeVideo } from "@/types/audio";
 import {
   getAudioState,
+  setAudioPlaying,
   setVolume,
   setYouTubeVideo,
   subscribeAudioState,
@@ -21,8 +22,10 @@ export function useBackgroundAudio() {
     source: state.source,
     youtube: state.youtube,
     volume: state.volume,
-    setYouTube: (video: YouTubeVideo | null) => setYouTubeVideo(video),
+    isPlaying: Boolean(state.isPlaying),
+    setYouTube: (video: YouTubeVideo | null, playImmediately: boolean = true) =>
+      setYouTubeVideo(video, playImmediately),
     setVolume: (vol: number) => setVolume(vol),
+    setPlaying: (playing: boolean) => setAudioPlaying(playing),
   };
 }
-
