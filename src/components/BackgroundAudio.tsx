@@ -21,6 +21,7 @@ import {
 import { useEffect, useState } from "react";
 import { useBackgroundAudio } from "@/hooks/useBackgroundAudio";
 import { useTimerStatus } from "@/hooks/useTimerStatus";
+import type { YouTubeVideo } from "@/types/audio";
 import {
   DEFAULT_YOUTUBE_SOUNDS,
   HARKIRAT_FAVOURITES,
@@ -147,11 +148,18 @@ export function BackgroundAudio() {
     setCustomSavedSongs(updated);
   };
 
-  const handleSelectPreset = (sound: typeof DEFAULT_YOUTUBE_SOUNDS[number]) => {
+  const handleToggleCardAudio = (sound: YouTubeVideo) => {
     setValidationError(null);
     setSuccessMsg(null);
-    setYouTube(sound, true);
-    setSuccessMsg(`✓ Selected ${sound.title}`);
+
+    const isSelected = youtube?.videoId === sound.videoId;
+    if (isSelected) {
+      setPlaying(!isPlaying);
+      setSuccessMsg(isPlaying ? `⏸ Paused ${sound.title}` : `▶ Resumed ${sound.title}`);
+    } else {
+      setYouTube(sound, true);
+      setSuccessMsg(`▶ Playing ${sound.title}`);
+    }
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
@@ -242,10 +250,8 @@ export function BackgroundAudio() {
                   {HARKIRAT_FAVOURITES.map((sound) => {
                     const isSelected = youtube?.videoId === sound.videoId;
                     return (
-                      <button
+                      <div
                         key={sound.id}
-                        type="button"
-                        onClick={() => handleSelectPreset(sound)}
                         className={cn(
                           "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
                           isSelected && isPlaying
@@ -262,17 +268,33 @@ export function BackgroundAudio() {
                             <span>Harkirat&apos;s Pick</span>
                           </div>
                         </div>
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => handleToggleCardAudio(sound)}
                           className={cn(
-                            "shrink-0 rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
+                            "flex items-center gap-1 shrink-0 rounded-lg px-3 py-1 text-xs font-semibold transition-colors",
                             isSelected && isPlaying
+                              ? "bg-amber-500 text-black hover:bg-amber-400"
+                              : isSelected
                               ? "bg-accent text-black"
-                              : "bg-accent/20 text-accent group-hover:bg-accent group-hover:text-black"
+                              : "bg-accent/20 text-accent hover:bg-accent hover:text-black"
                           )}
                         >
-                          {isSelected && isPlaying ? "Playing" : "Select"}
-                        </span>
-                      </button>
+                          {isSelected && isPlaying ? (
+                            <>
+                              <Pause size={12} /> Pause
+                            </>
+                          ) : isSelected ? (
+                            <>
+                              <Play size={12} /> Resume
+                            </>
+                          ) : (
+                            <>
+                              <Play size={12} /> Play
+                            </>
+                          )}
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -317,15 +339,29 @@ export function BackgroundAudio() {
                           <div className="flex items-center gap-1.5 shrink-0">
                             <button
                               type="button"
-                              onClick={() => handleSelectPreset(song)}
+                              onClick={() => handleToggleCardAudio(song)}
                               className={cn(
-                                "rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                                "flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
                                 isSelected && isPlaying
+                                  ? "bg-amber-500 text-black hover:bg-amber-400"
+                                  : isSelected
                                   ? "bg-accent text-black"
                                   : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                               )}
                             >
-                              {isSelected && isPlaying ? "Playing" : "Play"}
+                              {isSelected && isPlaying ? (
+                                <>
+                                  <Pause size={12} /> Pause
+                                </>
+                              ) : isSelected ? (
+                                <>
+                                  <Play size={12} /> Resume
+                                </>
+                              ) : (
+                                <>
+                                  <Play size={12} /> Play
+                                </>
+                              )}
                             </button>
                             <button
                               type="button"
@@ -403,10 +439,8 @@ export function BackgroundAudio() {
                     (sound) => {
                       const isSelected = youtube?.videoId === sound.videoId;
                       return (
-                        <button
+                        <div
                           key={sound.id}
-                          type="button"
-                          onClick={() => handleSelectPreset(sound)}
                           className={cn(
                             "group flex items-center justify-between rounded-xl border p-3.5 text-left transition-all",
                             isSelected && isPlaying
@@ -423,17 +457,33 @@ export function BackgroundAudio() {
                               <span>{sound.category || "YouTube"}</span>
                             </div>
                           </div>
-                          <span
+                          <button
+                            type="button"
+                            onClick={() => handleToggleCardAudio(sound)}
                             className={cn(
-                              "shrink-0 rounded-lg px-3 py-1 text-xs font-medium transition-colors",
+                              "flex items-center gap-1 shrink-0 rounded-lg px-3 py-1 text-xs font-medium transition-colors",
                               isSelected && isPlaying
+                                ? "bg-amber-500 text-black hover:bg-amber-400 font-semibold"
+                                : isSelected
                                 ? "bg-accent text-black font-semibold"
-                                : "bg-white/5 text-muted group-hover:text-foreground"
+                                : "bg-white/5 text-muted hover:text-foreground"
                             )}
                           >
-                            {isSelected && isPlaying ? "Playing" : "Select"}
-                          </span>
-                        </button>
+                            {isSelected && isPlaying ? (
+                              <>
+                                <Pause size={12} /> Pause
+                              </>
+                            ) : isSelected ? (
+                              <>
+                                <Play size={12} /> Resume
+                              </>
+                            ) : (
+                              <>
+                                <Play size={12} /> Play
+                              </>
+                            )}
+                          </button>
+                        </div>
                       );
                     }
                   )}
@@ -513,15 +563,29 @@ export function BackgroundAudio() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleSelectPreset(item)}
+                            onClick={() => handleToggleCardAudio(item)}
                             className={cn(
-                              "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors shrink-0",
+                              "flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-colors shrink-0",
                               isSelected && isPlaying
+                                ? "bg-amber-500 text-black hover:bg-amber-400"
+                                : isSelected
                                 ? "bg-accent text-black"
                                 : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
                             )}
                           >
-                            {isSelected && isPlaying ? "Playing" : "Replay"}
+                            {isSelected && isPlaying ? (
+                              <>
+                                <Pause size={11} /> Pause
+                              </>
+                            ) : isSelected ? (
+                              <>
+                                <Play size={11} /> Resume
+                              </>
+                            ) : (
+                              <>
+                                <Play size={11} /> Play
+                              </>
+                            )}
                           </button>
                         </div>
                       );
