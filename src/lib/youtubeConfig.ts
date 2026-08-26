@@ -9,6 +9,13 @@ export const HARKIRAT_FAVOURITES: YouTubeVideo[] = [
     category: "Harkirat's Pick",
   },
   {
+    id: "harkirat-5",
+    videoId: "6MAzUT1YhWE",
+    title: "Harkirat Coding Focus Beat",
+    url: "https://youtu.be/6MAzUT1YhWE",
+    category: "Harkirat's Pick",
+  },
+  {
     id: "harkirat-2",
     videoId: "Vm0lZAelVAk",
     title: "Harkirat Deep Coding Music",
@@ -53,7 +60,12 @@ export interface HistoryYouTubeItem extends YouTubeVideo {
   addedAt: string;
 }
 
+export interface CustomSavedSong extends YouTubeVideo {
+  savedAt: string;
+}
+
 const RECENT_KEY = "lh:recent-yt-history";
+const SAVED_SONGS_KEY = "lh:custom-favourite-songs";
 
 export function getRecentYouTubeHistory(): HistoryYouTubeItem[] {
   if (typeof window === "undefined") return [];
@@ -77,7 +89,7 @@ export function addRecentYouTubeHistory(item: YouTubeVideo): HistoryYouTubeItem[
     ...item,
     addedAt: new Date().toISOString(),
   };
-  const updated = [newItem, ...filtered].slice(0, 8); // Keep last 8 recent custom links
+  const updated = [newItem, ...filtered].slice(0, 8);
   try {
     localStorage.setItem(RECENT_KEY, JSON.stringify(updated));
   } catch {
@@ -93,6 +105,53 @@ export function clearRecentYouTubeHistory() {
   } catch {
     /* ignore */
   }
+}
+
+export function getCustomSavedSongs(): CustomSavedSong[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(SAVED_SONGS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+export function addCustomSavedSong(song: { title: string; url: string; videoId: string; category?: string }): CustomSavedSong[] {
+  if (typeof window === "undefined") return [];
+  const current = getCustomSavedSongs();
+  const filtered = current.filter((x) => x.videoId !== song.videoId);
+  const newSong: CustomSavedSong = {
+    id: `saved-${Date.now()}`,
+    videoId: song.videoId,
+    title: song.title.trim(),
+    url: song.url.trim(),
+    category: song.category || "Custom Saved",
+    savedAt: new Date().toISOString(),
+  };
+  const updated = [newSong, ...filtered];
+  try {
+    localStorage.setItem(SAVED_SONGS_KEY, JSON.stringify(updated));
+  } catch {
+    /* ignore */
+  }
+  return updated;
+}
+
+export function deleteCustomSavedSong(id: string): CustomSavedSong[] {
+  if (typeof window === "undefined") return [];
+  const current = getCustomSavedSongs();
+  const updated = current.filter((x) => x.id !== id);
+  try {
+    localStorage.setItem(SAVED_SONGS_KEY, JSON.stringify(updated));
+  } catch {
+    /* ignore */
+  }
+  return updated;
 }
 
 export function extractYouTubeId(input: string): string | null {

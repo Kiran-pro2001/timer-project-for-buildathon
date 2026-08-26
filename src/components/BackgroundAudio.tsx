@@ -15,6 +15,8 @@ import {
   Trash2,
   Music2,
   History,
+  Star,
+  Plus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useBackgroundAudio } from "@/hooks/useBackgroundAudio";
@@ -23,10 +25,14 @@ import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import {
   DEFAULT_YOUTUBE_SOUNDS,
   HARKIRAT_FAVOURITES,
+  addCustomSavedSong,
   addRecentYouTubeHistory,
   clearRecentYouTubeHistory,
+  deleteCustomSavedSong,
   extractYouTubeId,
+  getCustomSavedSongs,
   getRecentYouTubeHistory,
+  type CustomSavedSong,
   type HistoryYouTubeItem,
 } from "@/lib/youtubeConfig";
 import { cn } from "@/lib/utils";
@@ -53,21 +59,29 @@ export function BackgroundAudio() {
     useTimerStatus();
 
   const [minimized, setMinimized] = useState(false);
+
+  // Form states for Quick Custom URL & Custom Favourite Song Form
   const [urlInput, setUrlInput] = useState("");
+  const [favTitleInput, setFavTitleInput] = useState("");
+  const [favUrlInput, setFavUrlInput] = useState("");
+  const [favCategoryInput, setFavCategoryInput] = useState("Custom");
+
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [favValidationError, setFavValidationError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [previewPlaying, setPreviewPlaying] = useState(false);
+
   const [history, setHistory] = useState<HistoryYouTubeItem[]>([]);
+  const [customSavedSongs, setCustomSavedSongs] = useState<CustomSavedSong[]>([]);
 
   useEffect(() => {
     setHistory(getRecentYouTubeHistory());
+    setCustomSavedSongs(getCustomSavedSongs());
   }, []);
 
-  // Play state requested by timer or manual preview
   const shouldPlayAudio = (isRunning || previewPlaying) && status !== "stopped" && status !== "completed";
-
-  // YouTube Iframe Hook
   const activeVideoId = youtube?.videoId ?? null;
+
   const { isReady: isYtReady, error: ytError, forcePlay } = useYouTubePlayer({
     containerId: PLAYER_CONTAINER_ID,
     videoId: activeVideoId,
@@ -111,6 +125,44 @@ export function BackgroundAudio() {
     setTimeout(() => setSuccessMsg(null), 3000);
   };
 
+  const handleSaveCustomFavourite = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFavValidationError(null);
+
+    const title = favTitleInput.trim();
+    const url = favUrlInput.trim();
+
+    if (!title || !url) {
+      setFavValidationError("Both song name and YouTube URL are required.");
+      return;
+    }
+
+    const extractedId = extractYouTubeId(url);
+    if (!extractedId) {
+      setFavValidationError("Please enter a valid YouTube URL.");
+      return;
+    }
+
+    const updatedSaved = addCustomSavedSong({
+      title,
+      url: url.startsWith("http") ? url : `https://${url}`,
+      videoId: extractedId,
+      category: favCategoryInput.trim() || "Custom",
+    });
+
+    setCustomSavedSongs(updatedSaved);
+    setFavTitleInput("");
+    setFavUrlInput("");
+    setFavCategoryInput("Custom");
+    setSuccessMsg(`✓ Saved "${title}" to your favourite songs!`);
+    setTimeout(() => setSuccessMsg(null), 3500);
+  };
+
+  const handleDeleteSavedSong = (id: string) => {
+    const updated = deleteCustomSavedSong(id);
+    setCustomSavedSongs(updated);
+  };
+
   const handleSelectPreset = (sound: typeof DEFAULT_YOUTUBE_SOUNDS[number]) => {
     setValidationError(null);
     setSuccessMsg(null);
@@ -144,9 +196,6 @@ export function BackgroundAudio() {
 
   return (
     <div className="w-full max-w-2xl rounded-3xl border border-[var(--border)] bg-[var(--card)] backdrop-blur-md shadow-xl transition-all">
-      {/* Hidden container for YouTube IFrame API */}
-      <div id={PLAYER_CONTAINER_ID} className="hidden" aria-hidden="true" />
-
       {/* Minimized View Header / Control Bar */}
       <div className="flex items-center justify-between p-5 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
@@ -252,6 +301,121 @@ export function BackgroundAudio() {
                 </div>
               </div>
 
+              {/* MY CUSTOM SAVED SONGS SECTION */}
+              {customSavedSongs.length > 0 && (
+                <div className="rounded-2xl border border-accent/40 bg-accent/[0.04] p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+                      <Star size={15} className="text-amber-400 fill-amber-400" />
+                      <span>My Custom Saved Songs ({customSavedSongs.length})</span>
+                    </div>
+                    <span className="text-[10px] text-muted">Saved Favourites</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {customSavedSongs.map((song) => {
+                      const isSelected = youtube?.videoId === song.videoId;
+                      return (
+                        <div
+                          key={song.id}
+                          className={cn(
+                            "group flex items-center justify-between rounded-xl border p-3 text-left transition-all",
+                            isSelected
+                              ? "border-accent bg-accent/15 shadow-md"
+                              : "border-white/10 bg-white/[0.03] hover:border-accent/50 hover:bg-white/[0.06]"
+                          )}
+                        >
+                          <div className="truncate pr-2">
+                            <div className="text-sm font-bold text-foreground truncate">
+                              {song.title}
+                            </div>
+                            <div className="text-[10px] text-muted flex items-center gap-1 mt-0.5">
+                              <span className="rounded bg-white/10 px-1.5 py-0.2 font-mono">
+                                {song.category}
+                              </span>
+                              <span className="truncate">{song.url}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleSelectPreset(song)}
+                              className={cn(
+                                "rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                                isSelected
+                                  ? "bg-accent text-black"
+                                  : "bg-white/10 text-foreground hover:bg-accent hover:text-black"
+                              )}
+                            >
+                              {isSelected ? "Selected" : "Play"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteSavedSong(song.id)}
+                              title="Remove favourite"
+                              className="rounded-lg p-1 text-muted hover:text-red-400 hover:bg-white/5 transition-colors"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* SAVE CUSTOM FAVOURITE SONG FORM */}
+              <div className="rounded-2xl border border-[var(--border)] bg-black/30 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent">
+                  <Plus size={14} />
+                  <span>Save Song as Favourite</span>
+                </div>
+
+                <form onSubmit={handleSaveCustomFavourite} className="space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={favTitleInput}
+                      onChange={(e) => setFavTitleInput(e.target.value)}
+                      placeholder="Song / Stream Name (e.g. My Coding Lofi)"
+                      className="rounded-xl border border-[var(--border)] bg-black/20 px-3.5 py-2 text-xs text-foreground placeholder:text-muted/60 outline-none focus:border-accent"
+                    />
+                    <input
+                      type="text"
+                      value={favCategoryInput}
+                      onChange={(e) => setFavCategoryInput(e.target.value)}
+                      placeholder="Category Tag (e.g. Lofi, Chill, Focus)"
+                      className="rounded-xl border border-[var(--border)] bg-black/20 px-3.5 py-2 text-xs text-foreground placeholder:text-muted/60 outline-none focus:border-accent"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={favUrlInput}
+                      onChange={(e) => setFavUrlInput(e.target.value)}
+                      placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                      className="flex-1 rounded-xl border border-[var(--border)] bg-black/20 px-3.5 py-2 text-xs text-foreground placeholder:text-muted/60 outline-none focus:border-accent"
+                    />
+                    <button
+                      type="submit"
+                      className="flex items-center gap-1.5 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-black hover:bg-accent/90 transition-transform active:scale-95 shrink-0"
+                    >
+                      <Star size={13} className="fill-black" /> Save Favourite
+                    </button>
+                  </div>
+
+                  {favValidationError && (
+                    <div className="flex items-center gap-1.5 text-xs text-[#ff6b78]">
+                      <AlertCircle size={13} />
+                      <span>{favValidationError}</span>
+                    </div>
+                  )}
+                </form>
+              </div>
+
               {/* General Focus Streams */}
               <div>
                 <div className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted">
@@ -299,10 +463,10 @@ export function BackgroundAudio() {
                 </div>
               </div>
 
-              {/* Custom YouTube Link Input Form */}
+              {/* Quick Add Custom YouTube Link Form */}
               <div>
                 <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">
-                  Add Custom YouTube Link
+                  Quick Play YouTube Link
                 </div>
                 <form onSubmit={handleAddYouTubeUrl} className="flex gap-2">
                   <input
@@ -320,7 +484,7 @@ export function BackgroundAudio() {
                     type="submit"
                     className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-black transition-transform active:scale-[0.98] hover:bg-accent/90"
                   >
-                    Add
+                    Play Link
                   </button>
                 </form>
 
