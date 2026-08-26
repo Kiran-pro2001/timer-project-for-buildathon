@@ -15,7 +15,6 @@ import { Hero } from "./Hero";
 import { HypeBar } from "./HypeBar";
 import { LaunchBillboard } from "./LaunchBillboard";
 import { LaunchFeed } from "./LaunchFeed";
-import { FocusTimerSection } from "./FocusTimerSection";
 import { MotivationQuote } from "./MotivationQuote";
 import { StatsBar } from "./StatsBar";
 import { AdminPanel } from "./AdminPanel";
@@ -152,7 +151,7 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
         </div>
 
         {/* SECOND FOLD CONTENT: Scrolls below 100vh */}
-        <div className="mt-12 space-y-12 pt-6 border-t border-[var(--border)]/40">
+        <div className="mt-12 space-y-10 pt-6 border-t border-[var(--border)]/40">
           {/* Billboard spotlight — appears when a launch is featured */}
           <LaunchBillboard
             featured={featured?.launch ?? null}
@@ -180,9 +179,6 @@ export function Dashboard({ adminOpenInitially = false }: Props) {
               onClearAll={clearAllLaunches}
             />
           </motion.div>
-
-          {/* Focus Timer Section — directly after the launch section */}
-          <FocusTimerSection />
 
           {/* Footer */}
           <footer className="pt-6">

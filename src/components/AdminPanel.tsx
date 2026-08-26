@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
   Clock,
+  ExternalLink,
   Image as ImageIcon,
   Key,
   Music2,
@@ -16,6 +17,7 @@ import {
   Sliders,
   Sparkles,
   Target,
+  Timer,
   Type,
   X,
 } from "lucide-react";
@@ -52,7 +54,7 @@ function normalizeUrl(url: string): string {
 }
 
 export function AdminPanel({ open, onClose, onSubmit }: Props) {
-  const [activeTab, setActiveTab] = useState<"timer" | "audio" | "pomodoro" | "theme" | "launch">("timer");
+  const [activeTab, setActiveTab] = useState<"timer" | "audio" | "pomodoro" | "theme" | "launch" | "focustimer">("timer");
 
   const [form, setForm] = useState(empty);
   const [error, setError] = useState<string | null>(null);
@@ -218,12 +220,12 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
             </div>
 
             {/* Admin Tabs */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 rounded-2xl border border-[var(--border)] bg-black/30 p-1.5">
               <button
                 type="button"
                 onClick={() => setActiveTab("timer")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
                   activeTab === "timer"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -235,7 +237,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("audio")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
                   activeTab === "audio"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -247,7 +249,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("pomodoro")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
                   activeTab === "pomodoro"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -259,7 +261,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("theme")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
                   activeTab === "theme"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
@@ -271,13 +273,25 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                 type="button"
                 onClick={() => setActiveTab("launch")}
                 className={cn(
-                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2.5 text-xs font-semibold transition-all",
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
                   activeTab === "launch"
                     ? "bg-accent text-black shadow-sm"
                     : "text-muted hover:text-foreground"
                 )}
               >
                 <Rocket size={14} /> Launch
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("focustimer")}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 rounded-xl py-2 px-2 text-xs font-semibold transition-all",
+                  activeTab === "focustimer"
+                    ? "bg-accent text-black shadow-sm"
+                    : "text-muted hover:text-foreground"
+                )}
+              >
+                <Timer size={14} /> Focus App
               </button>
             </div>
 
@@ -599,6 +613,36 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
                   {justAdded ? "Launched! Add another" : "Submit Launch"}
                 </button>
               </form>
+            )}
+
+            {/* TAB 6: FOCUS TIMER APP REDIRECT */}
+            {activeTab === "focustimer" && (
+              <div className="space-y-5 rounded-2xl border border-accent/40 bg-accent/[0.04] p-6 text-center">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/20 text-accent shadow-md">
+                  <Timer size={28} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-foreground">
+                    Mellow Minute Focus Timer App
+                  </h3>
+                  <p className="text-xs text-muted max-w-md mx-auto leading-relaxed">
+                    Opens the external Mellow Minute Focus Timer app (<code className="font-mono text-accent">https://mellow-minute-timer.lovable.app/</code>) directly.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "https://mellow-minute-timer.lovable.app/";
+                    }}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-accent px-6 py-3 text-xs font-bold text-black hover:bg-accent/90 transition-transform active:scale-95 shadow-lg"
+                  >
+                    <ExternalLink size={15} />
+                    Open Focus Timer App (Full Page)
+                  </button>
+                </div>
+              </div>
             )}
 
             <p className="pt-2 text-center text-xs text-muted">
