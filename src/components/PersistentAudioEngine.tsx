@@ -13,11 +13,11 @@ const PLAYER_CONTAINER_ID = "youtube-bg-audio-container";
  */
 export function PersistentAudioEngine() {
   const { mounted, youtube, volume, isPlaying } = useBackgroundAudio();
-  const { status, isRunning } = useTimerStatus();
+  const { status } = useTimerStatus();
 
-  // Play audio when timer is active OR when user requested music playback manually
+  // Explicitly controlled by isPlaying state; stopped/completed timers silence audio
   const shouldPlayAudio =
-    (isRunning || isPlaying) && status !== "stopped" && status !== "completed";
+    Boolean(isPlaying) && status !== "stopped" && status !== "completed";
   const activeVideoId = youtube?.videoId ?? null;
 
   useYouTubePlayer({

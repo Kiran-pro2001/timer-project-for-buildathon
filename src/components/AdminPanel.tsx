@@ -67,7 +67,7 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
 
   const { status, isRunning, isPaused, startTimer, pauseTimer, resumeTimer, stopTimer } =
     useTimerStatus();
-  const { youtube, setYouTube } = useBackgroundAudio();
+  const { youtube, setYouTube, setPlaying } = useBackgroundAudio();
 
   // Theme Config
   const theme = useThemeConfig();
@@ -96,6 +96,8 @@ export function AdminPanel({ open, onClose, onSubmit }: Props) {
   const handleStartTimer = () => {
     if (!youtube) {
       setYouTube(HARKIRAT_FAVOURITES[0], true);
+    } else {
+      setPlaying(true);
     }
     startTimer();
   };
